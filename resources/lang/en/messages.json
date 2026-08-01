@@ -1,0 +1,7 @@
+{
+  "app_name": "Masarra",
+  "errors": {
+    "unexpected": "An unexpected error occurred.",
+    "validation": "Please check the submitted information."
+  }
+}
