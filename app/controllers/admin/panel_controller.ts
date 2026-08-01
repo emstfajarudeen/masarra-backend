@@ -1,10 +1,13 @@
 import ContactMessage from '#models/contact_message'
 import ContentPage from '#models/content_page'
 import ContentPageTranslation from '#models/content_page_translation'
+import CreditTransaction from '#models/credit_transaction'
 import Game from '#models/game'
+import GameSessionRound from '#models/game_session_round'
 import GameSession from '#models/game_session'
 import GameTranslation from '#models/game_translation'
 import MediaAsset from '#models/media_asset'
+import Payment from '#models/payment'
 import Question from '#models/question'
 import QuestionCategory from '#models/question_category'
 import QuestionCategoryTranslation from '#models/question_category_translation'
@@ -14,22 +17,34 @@ import {
   adminPanelCategoryFormValidator,
   adminPanelContactStatusValidator,
   adminPanelContentPageFormValidator,
+  adminPanelContentPublishStatusValidator,
   adminPanelCategoryListFilterValidator,
+  adminPanelCategoryAvailabilityValidator,
   adminPanelContactMessageListFilterValidator,
   adminPanelContentPageListFilterValidator,
   adminPanelGameFormValidator,
   adminPanelGameListFilterValidator,
   adminPanelIdParamsValidator,
   adminPanelMediaLibraryFilterValidator,
+  adminPanelPublishStatusValidator,
   adminPanelQuestionListFilterValidator,
   adminPanelQuestionFormValidator,
+  adminPanelUserListFilterValidator,
+  adminPanelUserStatusValidator,
 } from '#validators/admin_panel_forms'
+import { adminReportRangeValidator } from '#validators/admin_reports'
 import { serializeMediaAsset } from '#transformers/media_asset_transformer'
 import { Exception } from '@adonisjs/core/exceptions'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
+import env from '#start/env'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 import { DateTime } from 'luxon'
+
+interface AdminPanelDateRange {
+  from: DateTime | null
+  to: DateTime | null
+}
 
 export default class AdminPanelController {
   async dashboard({ inertia }: HttpContext) {
@@ -131,6 +146,644 @@ export default class AdminPanelController {
         withOptionalCategories: this.countValue(withOptionalCategories),
       },
     })
+  }
+
+  async users({ request, inertia }: HttpContext) {
+    const filters = await request.validateUsing(adminPanelUserListFilterValidator)
+    const role = filters.role ?? 'all'
+    const status = filters.status ?? 'all'
+
+    const query = User.query().whereNull('deleted_at').orderBy('created_at', 'desc')
+
+    if (role !== 'all') {
+      query.where('role', role)
+    }
+
+    if (status !== 'all') {
+      query.where('status', status)
+    }
+
+    const [users, total, active, suspended, admins, creditRows, sessionRows, paymentRows] =
+      await Promise.all([
+        query.limit(80),
+        User.query().whereNull('deleted_at').count('* as total').first(),
+        User.query().whereNull('deleted_at').where('status', 'active').count('* as total').first(),
+        User.query()
+          .whereNull('deleted_at')
+          .where('status', 'suspended')
+          .count('* as total')
+          .first(),
+        User.query().whereNull('deleted_at').where('role', 'admin').count('* as total').first(),
+        db
+          .from('credit_transactions')
+          .select('user_id')
+          .sum('amount as balance')
+          .groupBy('user_id'),
+        db.from('game_sessions').select('host_user_id').count('* as total').groupBy('host_user_id'),
+        db
+          .from('payments')
+          .select('user_id')
+          .count('* as total')
+          .where('status', 'paid')
+          .groupBy('user_id'),
+      ])
+
+    const creditByUser = this.indexNumberRows(creditRows, 'user_id', 'balance')
+    const sessionsByUser = this.indexNumberRows(sessionRows, 'host_user_id', 'total')
+    const purchasesByUser = this.indexNumberRows(paymentRows, 'user_id', 'total')
+
+    return inertia.render('admin/users', {
+      users: users.map((user) => ({
+        id: user.id,
+        fullName: user.fullName,
+        initials: user.initials,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+        status: user.status,
+        preferredLocale: user.preferredLocale,
+        emailVerified: Boolean(user.emailVerifiedAt),
+        phoneVerified: Boolean(user.phoneVerifiedAt),
+        creditBalance: creditByUser.get(user.id) ?? 0,
+        gameSessionCount: sessionsByUser.get(user.id) ?? 0,
+        purchaseCount: purchasesByUser.get(user.id) ?? 0,
+        createdAt: user.createdAt?.toISO() ?? null,
+      })),
+      filters: { role, status },
+      stats: {
+        total: this.countValue(total),
+        active: this.countValue(active),
+        suspended: this.countValue(suspended),
+        admins: this.countValue(admins),
+      },
+    })
+  }
+
+  async userShow({ request, inertia }: HttpContext) {
+    const {
+      params: { id },
+    } = await request.validateUsing(adminPanelIdParamsValidator)
+
+    const user = await User.query().where('id', id).whereNull('deleted_at').firstOrFail()
+
+    const [creditBalanceRow, gameSessions, payments, creditTransactions] = await Promise.all([
+      db.from('credit_transactions').where('user_id', user.id).sum('amount as balance').first(),
+      GameSession.query()
+        .where('host_user_id', user.id)
+        .preload('game', (gameQuery) => {
+          gameQuery.preload('translations', (translationQuery) =>
+            translationQuery.where('locale', 'ar')
+          )
+        })
+        .orderBy('created_at', 'desc')
+        .limit(10),
+      Payment.query().where('user_id', user.id).orderBy('created_at', 'desc').limit(10),
+      CreditTransaction.query().where('user_id', user.id).orderBy('created_at', 'desc').limit(12),
+    ])
+
+    return inertia.render('admin/user_show', {
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        initials: user.initials,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+        status: user.status,
+        preferredLocale: user.preferredLocale,
+        emailVerifiedAt: user.emailVerifiedAt?.toISO() ?? null,
+        phoneVerifiedAt: user.phoneVerifiedAt?.toISO() ?? null,
+        termsAcceptedAt: user.termsAcceptedAt?.toISO() ?? null,
+        creditBalance: Number(creditBalanceRow?.balance ?? 0),
+        createdAt: user.createdAt?.toISO() ?? null,
+      },
+      gameSessions: gameSessions.map((session) => ({
+        id: session.id,
+        status: session.status,
+        gameTitle: session.game.translations[0]?.title ?? session.game.slug,
+        selectedRoundCount: session.selectedRoundCount,
+        completedRoundCount: session.completedRoundCount,
+        reservedCreditCount: session.reservedCreditCount,
+        refundedCreditCount: session.refundedCreditCount,
+        creditReservationStatus: session.creditReservationStatus,
+        createdAt: session.createdAt?.toISO() ?? null,
+      })),
+      payments: payments.map((payment) => ({
+        id: payment.id,
+        status: payment.status,
+        method: payment.method,
+        payableType: payment.payableType,
+        amount: payment.amount,
+        currency: payment.currency,
+        provider: payment.provider,
+        providerReference: payment.providerReference,
+        paidAt: payment.paidAt?.toISO() ?? null,
+        createdAt: payment.createdAt?.toISO() ?? null,
+      })),
+      creditTransactions: creditTransactions.map((transaction) => ({
+        id: transaction.id,
+        type: transaction.type,
+        amount: transaction.amount,
+        currency: transaction.currency,
+        description: transaction.description,
+        createdAt: transaction.createdAt?.toISO() ?? null,
+      })),
+      timeline: this.userTimeline(gameSessions, payments, creditTransactions),
+    })
+  }
+
+  async reports({ request, inertia }: HttpContext) {
+    const range = await this.validatedReportRange(request)
+
+    const [
+      totalUsers,
+      activeUsers,
+      registeredUsers,
+      totalSessions,
+      completedSessions,
+      activeSessions,
+      reservedCredits,
+      refundedCredits,
+      paidPayments,
+      paymentRevenue,
+      newMessages,
+      sessionStatuses,
+      paymentStatuses,
+      paymentMethods,
+      userStatuses,
+      creditTypes,
+      mostPlayedGames,
+      latestSessions,
+      latestPayments,
+    ] = await Promise.all([
+      User.query().whereNull('deleted_at').count('* as total').first(),
+      User.query().whereNull('deleted_at').where('status', 'active').count('* as total').first(),
+      this.applyReportRange(User.query().whereNull('deleted_at'), range)
+        .count('* as total')
+        .first(),
+      this.applyReportRange(GameSession.query(), range).count('* as total').first(),
+      this.applyReportRange(GameSession.query().where('status', 'completed'), range)
+        .count('* as total')
+        .first(),
+      GameSession.query().where('status', 'active').count('* as total').first(),
+      this.sessionCreditSum('reserved_credit_count', range),
+      this.sessionCreditSum('refunded_credit_count', range),
+      this.applyReportRange(Payment.query().where('status', 'paid'), range)
+        .count('* as total')
+        .first(),
+      this.paymentRevenueByCurrency(range),
+      ContactMessage.query().where('status', 'new').count('* as total').first(),
+      this.groupReportCount('game_sessions', 'status', range),
+      this.groupReportCount('payments', 'status', range),
+      this.groupReportCount('payments', 'method', range),
+      this.groupReportCount('users', 'status', range),
+      this.groupReportCount('credit_transactions', 'type', range),
+      this.mostPlayedGames(range),
+      GameSession.query()
+        .preload('host')
+        .preload('game', (gameQuery) =>
+          gameQuery.preload('translations', (translationQuery) =>
+            translationQuery.where('locale', 'ar')
+          )
+        )
+        .orderBy('created_at', 'desc')
+        .limit(8),
+      Payment.query().preload('user').orderBy('created_at', 'desc').limit(8),
+    ])
+
+    return inertia.render('admin/reports', {
+      filters: {
+        from: range.from?.toISODate() ?? '',
+        to: range.to?.toISODate() ?? '',
+      },
+      metrics: {
+        totalUsers: this.countValue(totalUsers),
+        activeUsers: this.countValue(activeUsers),
+        registeredUsers: this.countValue(registeredUsers),
+        totalSessions: this.countValue(totalSessions),
+        completedSessions: this.countValue(completedSessions),
+        activeSessions: this.countValue(activeSessions),
+        reservedCredits,
+        refundedCredits,
+        paidPayments: this.countValue(paidPayments),
+        paymentRevenue,
+        newMessages: this.countValue(newMessages),
+      },
+      sessionStatuses,
+      paymentStatuses,
+      paymentMethods,
+      userStatuses,
+      creditTypes,
+      mostPlayedGames,
+      latestSessions: latestSessions.map((session) => ({
+        id: session.id,
+        status: session.status,
+        hostName: session.host.fullName,
+        gameTitle: session.game.translations[0]?.title ?? session.game.slug,
+        completedRoundCount: session.completedRoundCount,
+        selectedRoundCount: session.selectedRoundCount,
+        reservedCreditCount: session.reservedCreditCount,
+        refundedCreditCount: session.refundedCreditCount,
+        createdAt: session.createdAt?.toISO() ?? null,
+      })),
+      latestPayments: latestPayments.map((payment) => ({
+        id: payment.id,
+        status: payment.status,
+        method: payment.method,
+        payableType: payment.payableType,
+        amount: payment.amount,
+        currency: payment.currency,
+        userName: payment.user.fullName,
+        paidAt: payment.paidAt?.toISO() ?? null,
+        createdAt: payment.createdAt?.toISO() ?? null,
+      })),
+    })
+  }
+
+  async finance({ request, inertia }: HttpContext) {
+    const range = await this.validatedReportRange(request)
+
+    const [payments, creditTransactions, paymentStatuses, creditTypes, revenue, creditTotals] =
+      await Promise.all([
+        Payment.query().preload('user').orderBy('created_at', 'desc').limit(80),
+        CreditTransaction.query().preload('user').orderBy('created_at', 'desc').limit(80),
+        this.groupReportCount('payments', 'status', range),
+        this.groupReportCount('credit_transactions', 'type', range),
+        this.paymentRevenueByCurrency(range),
+        this.creditTotalsByType(range),
+      ])
+
+    return inertia.render('admin/finance', {
+      filters: {
+        from: range.from?.toISODate() ?? '',
+        to: range.to?.toISODate() ?? '',
+      },
+      summary: {
+        paymentStatuses,
+        creditTypes,
+        revenue,
+        creditTotals,
+      },
+      payments: payments.map((payment) => ({
+        id: payment.id,
+        userName: payment.user.fullName,
+        userId: payment.userId,
+        status: payment.status,
+        method: payment.method,
+        payableType: payment.payableType,
+        amount: payment.amount,
+        currency: payment.currency,
+        provider: payment.provider,
+        providerReference: payment.providerReference,
+        paidAt: payment.paidAt?.toISO() ?? null,
+        expiresAt: payment.expiresAt?.toISO() ?? null,
+        createdAt: payment.createdAt?.toISO() ?? null,
+      })),
+      creditTransactions: creditTransactions.map((transaction) => ({
+        id: transaction.id,
+        userName: transaction.user.fullName,
+        userId: transaction.userId,
+        type: transaction.type,
+        amount: transaction.amount,
+        currency: transaction.currency,
+        description: transaction.description,
+        gameSessionId: transaction.gameSessionId,
+        createdAt: transaction.createdAt?.toISO() ?? null,
+      })),
+    })
+  }
+
+  async settings({ inertia }: HttpContext) {
+    return inertia.render('admin/settings', {
+      settings: {
+        runtime: {
+          nodeEnv: env.get('NODE_ENV'),
+          appUrl: env.get('APP_URL'),
+          timezone: 'UTC persistence / app-local display',
+        },
+        localization: {
+          defaultLocale: 'ar',
+          supportedLocales: ['ar', 'en'],
+          currentContentLocale: 'ar',
+          englishReady: true,
+        },
+        storage: {
+          activeDisk: 'local',
+          futureDisks: ['s3-compatible'],
+          publicMediaRoute: '/api/v1/media-assets/:id/file',
+        },
+        auth: {
+          otpChannel: 'mobile',
+          passwordLogin: true,
+          googleLoginPlaceholder: true,
+        },
+        payments: {
+          providerConfirmed: false,
+          supportedMethods: ['direct', 'wallet'],
+          optionalCategoryPayments: true,
+          manualCreditAdjustmentsEnabled: false,
+        },
+        gameplay: {
+          maxTeams: 6,
+          roundCreditRule: 'charge when backend marks round completed',
+          userCancelRule: 'host/user initiated cancellation forfeits played rounds only',
+        },
+      },
+    })
+  }
+
+  async gameShow({ request, inertia }: HttpContext) {
+    const {
+      params: { id },
+    } = await request.validateUsing(adminPanelIdParamsValidator)
+
+    const game = await Game.query()
+      .where('id', id)
+      .preload('translations')
+      .preload('categories', (categoryQuery) => {
+        categoryQuery.preload('translations', (translationQuery) =>
+          translationQuery.where('locale', 'ar')
+        )
+      })
+      .firstOrFail()
+
+    const [questionsCount, publishedQuestions, sessionsCount, completedSessions, latestSessions] =
+      await Promise.all([
+        Question.query().where('game_id', game.id).count('* as total').first(),
+        Question.query()
+          .where('game_id', game.id)
+          .where('status', 'published')
+          .count('* as total')
+          .first(),
+        GameSession.query().where('game_id', game.id).count('* as total').first(),
+        GameSession.query()
+          .where('game_id', game.id)
+          .where('status', 'completed')
+          .count('* as total')
+          .first(),
+        GameSession.query()
+          .where('game_id', game.id)
+          .preload('host')
+          .orderBy('created_at', 'desc')
+          .limit(8),
+      ])
+
+    return inertia.render('admin/game_show', {
+      game: {
+        ...this.serializeGameForm(game),
+        createdAt: game.createdAt?.toISO() ?? null,
+        updatedAt: game.updatedAt?.toISO() ?? null,
+        publishedAt: game.publishedAt?.toISO() ?? null,
+      },
+      stats: {
+        questions: this.countValue(questionsCount),
+        publishedQuestions: this.countValue(publishedQuestions),
+        sessions: this.countValue(sessionsCount),
+        completedSessions: this.countValue(completedSessions),
+        categories: game.categories.length,
+      },
+      categories: game.categories.map((category) => ({
+        id: category.id,
+        slug: category.slug,
+        title: category.translations[0]?.title ?? category.slug,
+        status: category.status,
+        isEnabled: category.isEnabled,
+        priceAmount: category.priceAmount,
+        priceCurrency: category.priceCurrency,
+      })),
+      latestSessions: latestSessions.map((session) => ({
+        id: session.id,
+        hostName: session.host.fullName,
+        status: session.status,
+        completedRoundCount: session.completedRoundCount,
+        selectedRoundCount: session.selectedRoundCount,
+        reservedCreditCount: session.reservedCreditCount,
+        refundedCreditCount: session.refundedCreditCount,
+        createdAt: session.createdAt?.toISO() ?? null,
+      })),
+    })
+  }
+
+  async categoryShow({ request, inertia }: HttpContext) {
+    const {
+      params: { id },
+    } = await request.validateUsing(adminPanelIdParamsValidator)
+
+    const category = await QuestionCategory.query()
+      .where('id', id)
+      .preload('translations')
+      .preload('game', (gameQuery) => {
+        gameQuery.preload('translations', (translationQuery) =>
+          translationQuery.where('locale', 'ar')
+        )
+      })
+      .firstOrFail()
+
+    const [questions, questionCount, publishedQuestions, sessionCount, paidPayments] =
+      await Promise.all([
+        Question.query()
+          .where('question_category_id', category.id)
+          .preload('translations', (translationQuery) => translationQuery.where('locale', 'ar'))
+          .orderBy('created_at', 'desc')
+          .limit(10),
+        Question.query().where('question_category_id', category.id).count('* as total').first(),
+        Question.query()
+          .where('question_category_id', category.id)
+          .where('status', 'published')
+          .count('* as total')
+          .first(),
+        GameSession.query()
+          .where('optional_question_category_id', category.id)
+          .count('* as total')
+          .first(),
+        db
+          .from('payments')
+          .join('game_sessions', 'game_sessions.id', 'payments.game_session_id')
+          .where('game_sessions.optional_question_category_id', category.id)
+          .where('payments.status', 'paid')
+          .count('* as total')
+          .first(),
+      ])
+
+    return inertia.render('admin/category_show', {
+      category: {
+        ...this.serializeCategoryForm(category),
+        gameTitle: category.game.translations[0]?.title ?? category.game.slug,
+        createdAt: category.createdAt?.toISO() ?? null,
+        updatedAt: category.updatedAt?.toISO() ?? null,
+        publishedAt: category.publishedAt?.toISO() ?? null,
+      },
+      stats: {
+        questions: this.countValue(questionCount),
+        publishedQuestions: this.countValue(publishedQuestions),
+        selectedSessions: this.countValue(sessionCount),
+        paidPayments: Number(paidPayments?.total ?? 0),
+      },
+      questions: questions.map((question) => ({
+        id: question.id,
+        prompt: question.translations[0]?.prompt ?? '—',
+        status: question.status,
+        type: question.type,
+        contentMode: String(question.metadata.contentMode ?? 'text'),
+        effectLogic: String(question.metadata.effectLogic ?? 'normal'),
+        basePoints: question.basePoints,
+        createdAt: question.createdAt?.toISO() ?? null,
+      })),
+    })
+  }
+
+  async questionShow({ request, inertia }: HttpContext) {
+    const {
+      params: { id },
+    } = await request.validateUsing(adminPanelIdParamsValidator)
+
+    const question = await Question.query()
+      .where('id', id)
+      .preload('translations')
+      .preload('game', (gameQuery) => {
+        gameQuery.preload('translations', (translationQuery) =>
+          translationQuery.where('locale', 'ar')
+        )
+      })
+      .preload('category', (categoryQuery) => {
+        categoryQuery.preload('translations', (translationQuery) =>
+          translationQuery.where('locale', 'ar')
+        )
+      })
+      .firstOrFail()
+
+    const mediaAssetId =
+      typeof question.metadata.mediaAssetId === 'string' ? question.metadata.mediaAssetId : null
+
+    const [usageCount, latestRounds, mediaAsset] = await Promise.all([
+      GameSessionRound.query().where('question_id', question.id).count('* as total').first(),
+      GameSessionRound.query()
+        .where('question_id', question.id)
+        .preload('session')
+        .orderBy('created_at', 'desc')
+        .limit(8),
+      mediaAssetId
+        ? MediaAsset.query().where('id', mediaAssetId).whereNull('deleted_at').first()
+        : null,
+    ])
+
+    const translation = question.translations.find((item) => item.locale === 'ar')
+
+    return inertia.render('admin/question_show', {
+      question: {
+        id: question.id,
+        prompt: translation?.prompt ?? '—',
+        correctAnswer: translation?.correctAnswer ?? null,
+        explanation: translation?.explanation ?? null,
+        gameTitle: question.game.translations[0]?.title ?? question.game.slug,
+        categoryTitle: question.category
+          ? (question.category.translations[0]?.title ?? question.category.slug)
+          : null,
+        status: question.status,
+        type: question.type,
+        contentMode: String(question.metadata.contentMode ?? 'text'),
+        effectLogic: String(question.metadata.effectLogic ?? 'normal'),
+        mediaUrl:
+          typeof question.metadata.mediaUrl === 'string' ? question.metadata.mediaUrl : null,
+        basePoints: question.basePoints,
+        sortOrder: question.sortOrder,
+        createdAt: question.createdAt?.toISO() ?? null,
+        updatedAt: question.updatedAt?.toISO() ?? null,
+        publishedAt: question.publishedAt?.toISO() ?? null,
+      },
+      stats: {
+        usageCount: this.countValue(usageCount),
+      },
+      mediaAsset: mediaAsset ? this.serializePanelMediaAsset(mediaAsset) : null,
+      latestRounds: latestRounds.map((round) => ({
+        id: round.id,
+        sessionId: round.gameSessionId,
+        sessionStatus: round.session.status,
+        roundNumber: round.roundNumber,
+        status: round.status,
+        scoringRule: round.scoringRule,
+        awardedPoints: round.awardedPoints,
+        creditOutcome: round.creditOutcome,
+        createdAt: round.createdAt?.toISO() ?? null,
+      })),
+    })
+  }
+
+  async gameUpdateStatus({ request, response, session }: HttpContext) {
+    const payload = await request.validateUsing(adminPanelPublishStatusValidator)
+    const game = await Game.findOrFail(payload.params.id)
+
+    game.status = payload.status
+    game.publishedAt = this.publishedAtFor(payload.status, game.publishedAt)
+    await game.save()
+
+    session.flash('success', 'Game status updated.')
+    return response.redirect(`/admin/games/${game.id}`)
+  }
+
+  async categoryUpdateStatus({ request, response, session }: HttpContext) {
+    const payload = await request.validateUsing(adminPanelPublishStatusValidator)
+    const category = await QuestionCategory.findOrFail(payload.params.id)
+
+    category.status = payload.status
+    category.publishedAt = this.publishedAtFor(payload.status, category.publishedAt)
+    await category.save()
+
+    session.flash('success', 'Category status updated.')
+    return response.redirect(`/admin/categories/${category.id}`)
+  }
+
+  async categoryUpdateAvailability({ request, response, session }: HttpContext) {
+    const payload = await request.validateUsing(adminPanelCategoryAvailabilityValidator)
+    const category = await QuestionCategory.findOrFail(payload.params.id)
+
+    category.isEnabled = payload.isEnabled
+    await category.save()
+
+    session.flash('success', 'Category availability updated.')
+    return response.redirect(`/admin/categories/${category.id}`)
+  }
+
+  async questionUpdateStatus({ request, response, session }: HttpContext) {
+    const payload = await request.validateUsing(adminPanelPublishStatusValidator)
+    const question = await Question.findOrFail(payload.params.id)
+
+    question.status = payload.status
+    question.publishedAt = this.publishedAtFor(payload.status, question.publishedAt)
+    await question.save()
+
+    session.flash('success', 'Question status updated.')
+    return response.redirect(`/admin/questions/${question.id}`)
+  }
+
+  async contentPageUpdateStatus({ request, response, session }: HttpContext) {
+    const payload = await request.validateUsing(adminPanelContentPublishStatusValidator)
+    const page = await ContentPage.findOrFail(payload.params.id)
+
+    page.status = payload.status
+    page.publishedAt = this.publishedAtFor(payload.status, page.publishedAt)
+    await page.save()
+
+    session.flash('success', 'Content page status updated.')
+    return response.redirect(`/admin/content-pages/${page.id}/edit`)
+  }
+
+  async userUpdateStatus({ request, response, session, auth }: HttpContext) {
+    const payload = await request.validateUsing(adminPanelUserStatusValidator)
+    const user = await User.query()
+      .where('id', payload.params.id)
+      .whereNull('deleted_at')
+      .firstOrFail()
+
+    if (auth.user?.id === user.id && payload.status === 'suspended') {
+      throw new Exception('You cannot suspend your own admin account.', { status: 422 })
+    }
+
+    user.status = payload.status
+    await user.save()
+
+    session.flash('success', 'User status updated.')
+    return response.redirect(`/admin/users/${user.id}`)
   }
 
   async gameCreate({ inertia }: HttpContext) {
@@ -759,8 +1412,138 @@ export default class AdminPanelController {
     return Number(row?.amount ?? 0).toFixed(3)
   }
 
+  private async validatedReportRange(
+    request: HttpContext['request']
+  ): Promise<AdminPanelDateRange> {
+    const payload = await request.validateUsing(adminReportRangeValidator)
+
+    const from = payload.from
+      ? DateTime.fromISO(payload.from, { zone: 'utc' }).startOf('day')
+      : null
+    const to = payload.to ? DateTime.fromISO(payload.to, { zone: 'utc' }).endOf('day') : null
+
+    if ((from && !from.isValid) || (to && !to.isValid)) {
+      throw new Exception('Invalid report date range.', { status: 422 })
+    }
+
+    if (from && to && from > to) {
+      throw new Exception('Report start date must be before end date.', { status: 422 })
+    }
+
+    return { from, to }
+  }
+
+  private applyReportRange<T extends { where(column: string, operator: string, value: string): T }>(
+    query: T,
+    range: AdminPanelDateRange
+  ) {
+    if (range.from) {
+      query.where('created_at', '>=', range.from.toSQL()!)
+    }
+
+    if (range.to) {
+      query.where('created_at', '<=', range.to.toSQL()!)
+    }
+
+    return query
+  }
+
+  private async groupReportCount(table: string, column: string, range: AdminPanelDateRange) {
+    const query = db.from(table).select(column).count('* as total').groupBy(column)
+    this.applyReportRange(query, range)
+    const rows = await query
+
+    return rows.map((row) => ({
+      key: String(row[column]),
+      count: Number(row.total),
+    }))
+  }
+
+  private async paymentRevenueByCurrency(range: AdminPanelDateRange) {
+    const query = db
+      .from('payments')
+      .select('currency')
+      .sum('amount as amount')
+      .where('status', 'paid')
+      .groupBy('currency')
+
+    this.applyReportRange(query, range)
+    const rows = await query
+
+    return rows.map((row) => ({
+      currency: String(row.currency),
+      amount: Number(row.amount ?? 0).toFixed(3),
+    }))
+  }
+
+  private async sessionCreditSum(
+    column: 'reserved_credit_count' | 'refunded_credit_count',
+    range: AdminPanelDateRange
+  ) {
+    const query = db.from('game_sessions').sum(`${column} as total`)
+    this.applyReportRange(query, range)
+    const [row] = await query
+
+    return Number(row?.total ?? 0)
+  }
+
+  private async mostPlayedGames(range: AdminPanelDateRange) {
+    const query = db
+      .from('game_sessions')
+      .join('games', 'games.id', 'game_sessions.game_id')
+      .leftJoin('game_translations', (join) => {
+        join.on('game_translations.game_id', 'games.id').andOnVal('game_translations.locale', 'ar')
+      })
+      .select('games.id')
+      .select('games.slug')
+      .select('game_translations.title')
+      .count('game_sessions.id as session_count')
+      .sum('game_sessions.completed_round_count as completed_round_count')
+      .groupBy('games.id', 'games.slug', 'game_translations.title')
+      .orderBy('session_count', 'desc')
+      .limit(6)
+
+    this.applyReportRange(query, range)
+    const rows = await query
+
+    return rows.map((row) => ({
+      id: String(row.id),
+      title: String(row.title ?? row.slug),
+      sessionCount: Number(row.session_count ?? 0),
+      completedRoundCount: Number(row.completed_round_count ?? 0),
+    }))
+  }
+
+  private async creditTotalsByType(range: AdminPanelDateRange) {
+    const query = db
+      .from('credit_transactions')
+      .select('type')
+      .sum('amount as amount')
+      .groupBy('type')
+
+    this.applyReportRange(query, range)
+    const rows = await query
+
+    return rows.map((row) => ({
+      type: String(row.type),
+      amount: Number(row.amount ?? 0),
+    }))
+  }
+
   private countValue(row: { $extras?: { total?: string | number } } | null) {
     return Number(row?.$extras?.total ?? 0)
+  }
+
+  private indexNumberRows(rows: Record<string, unknown>[], keyColumn: string, valueColumn: string) {
+    const output = new Map<string, number>()
+
+    for (const row of rows) {
+      const key = row[keyColumn]
+      if (typeof key !== 'string') continue
+      output.set(key, Number(row[valueColumn] ?? 0))
+    }
+
+    return output
   }
 
   private publishedAtFor(status: string, current: DateTime | null = null) {
@@ -770,6 +1553,43 @@ export default class AdminPanelController {
   private previewText(value: string, limit = 180) {
     const normalized = value.replace(/\s+/g, ' ').trim()
     return normalized.length > limit ? `${normalized.slice(0, limit)}…` : normalized
+  }
+
+  private userTimeline(
+    sessions: GameSession[],
+    payments: Payment[],
+    creditTransactions: CreditTransaction[]
+  ) {
+    return [
+      ...sessions.map((session) => ({
+        id: `session-${session.id}`,
+        type: 'game_session',
+        title: session.game.translations[0]?.title ?? session.game.slug,
+        status: session.status,
+        description: `${session.completedRoundCount}/${session.selectedRoundCount ?? '—'} rounds`,
+        createdAt: session.createdAt?.toISO() ?? null,
+      })),
+      ...payments.map((payment) => ({
+        id: `payment-${payment.id}`,
+        type: 'payment',
+        title: `${payment.amount} ${payment.currency}`,
+        status: payment.status,
+        description: `${payment.method} ${payment.payableType}`,
+        createdAt: payment.createdAt?.toISO() ?? null,
+      })),
+      ...creditTransactions.map((transaction) => ({
+        id: `credit-${transaction.id}`,
+        type: 'credit_transaction',
+        title: `${transaction.amount} ${transaction.currency}`,
+        status: transaction.type,
+        description: transaction.description ?? 'Credit transaction',
+        createdAt: transaction.createdAt?.toISO() ?? null,
+      })),
+    ]
+      .sort((left, right) =>
+        String(right.createdAt ?? '').localeCompare(String(left.createdAt ?? ''))
+      )
+      .slice(0, 16)
   }
 
   private assertTeamBounds(minTeamCount: number, maxTeamCount: number) {

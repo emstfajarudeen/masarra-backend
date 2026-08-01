@@ -17,12 +17,14 @@ const shieldConfig = defineConfig({
      */
     directives: {
       defaultSrc: [`'self'`, '@viteUrl'],
-      connectSrc: [`'self'`, '@viteHmrUrl'],
+      connectSrc: app.inDev
+        ? [`'self'`, '@viteHmrUrl', 'ws://localhost:24678', 'http://localhost:24678']
+        : [`'self'`],
       fontSrc: [`'self'`, 'data:'],
       frameAncestors: [`'none'`],
       imgSrc: [`'self'`, 'data:', 'blob:'],
       objectSrc: [`'none'`],
-      scriptSrc: [`'self'`, '@nonce'],
+      scriptSrc: app.inDev ? [`'self'`, `'unsafe-inline'`, '@viteUrl'] : [`'self'`, '@nonce'],
       styleSrc: app.inDev ? [`'self'`, `'unsafe-inline'`] : [`'self'`, '@nonce'],
     },
 

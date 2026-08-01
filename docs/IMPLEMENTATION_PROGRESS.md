@@ -217,4 +217,105 @@
 - [x] Add admin UI smoke test coverage.
 - [x] Run format, lint, typecheck and production build.
 - [ ] Run full check after local PostgreSQL role `masarra` is available.
-- [ ] Await approval for next phase.
+- [x] Approval received for Step 20.
+
+## Step 20 — Admin User Management UI
+
+- [x] Add admin users route.
+- [x] Add user filters by role and status.
+- [x] Add user stats cards.
+- [x] Show profile, verification, wallet, session and purchase summaries.
+- [x] Keep user management read-only for this phase.
+- [x] Add admin UI smoke test coverage.
+- [x] Run format, lint, typecheck and production build.
+- [ ] Run full check after local PostgreSQL role `masarra` is available.
+- [x] Approval received for Step 21.
+
+## Step 21 — Admin User Detail and Moderation
+
+- [x] Add admin user detail route.
+- [x] Show profile and verification details.
+- [x] Show recent game sessions.
+- [x] Show recent payments.
+- [x] Show credit transaction history.
+- [x] Add read-only account timeline.
+- [x] Keep moderation state changes out of scope.
+- [x] Add admin UI smoke test coverage.
+- [x] Run format, lint, typecheck and production build.
+- [ ] Run full check after local PostgreSQL role `masarra` is available.
+- [x] Approval received for Step 22.
+
+## Step 22 — Admin Operational Reports UI
+
+- [x] Add admin reports route.
+- [x] Add date range filters.
+- [x] Show revenue, sessions, payments, users and credits summary.
+- [x] Show status/method/type breakdown cards.
+- [x] Show most played games.
+- [x] Show latest sessions and payments.
+- [x] Keep reports read-only.
+- [x] Add admin UI smoke test coverage.
+- [x] Run format, lint, typecheck and production build.
+- [ ] Run full check after local PostgreSQL role `masarra` is available.
+- [x] Approval received for Step 23.
+
+## Step 23 — Admin Question/Game Detail Views
+
+- [x] Add read-only game detail route.
+- [x] Add read-only category detail route.
+- [x] Add read-only question preview route.
+- [x] Link list cards to detail screens.
+- [x] Show operational stats and recent usage.
+- [x] Show question media preview and effect logic.
+- [x] Keep detail screens read-only.
+- [x] Add admin UI smoke test coverage.
+- [x] Run format, lint, typecheck and production build.
+- [ ] Run full check after local PostgreSQL role `masarra` is available.
+- [x] Approval received to complete remaining admin steps without pausing.
+
+## Step 24 — Admin Safe State Actions
+
+- [x] Add validated game status actions.
+- [x] Add validated category status actions.
+- [x] Add validated category availability action.
+- [x] Add validated question status actions.
+- [x] Add validated content page status actions.
+- [x] Add validated user activate/suspend action.
+- [x] Block self-suspension for current admin.
+- [x] Add confirmation prompts in admin UI.
+- [x] Add admin UI smoke test coverage.
+- [x] Run format, lint, typecheck and production build.
+- [ ] Run full check after local PostgreSQL role `masarra` is available.
+
+## Step 25 — Admin Finance and Credit UI
+
+- [x] Add admin finance route.
+- [x] Add payment review table.
+- [x] Add credit transaction review table.
+- [x] Add date range filters.
+- [x] Add revenue and credit movement summaries.
+- [x] Keep manual credit adjustment out of scope.
+- [x] Add admin UI smoke test coverage.
+- [x] Run format, lint, typecheck and production build.
+- [ ] Run full check after local PostgreSQL role `masarra` is available.
+
+## Step 26 — Admin System Settings UI
+
+- [x] Add admin settings route.
+- [x] Show runtime, localization, storage, auth, payment and gameplay config.
+- [x] Keep settings read-only.
+- [x] Avoid exposing secrets.
+- [x] Add admin UI smoke test coverage.
+- [x] Run format, lint, typecheck and production build.
+- [ ] Run full check after local PostgreSQL role `masarra` is available.
+
+## Step 27 — Final Admin QA and Handoff
+
+- [x] Reuse Masarra color palette across added admin screens.
+- [x] Keep new finance/settings screens admin-only.
+- [x] Keep destructive/delete actions out.
+- [x] Run format check.
+- [x] Run lint.
+- [x] Run typecheck.
+- [x] Run production build.
+- [ ] Run full functional suite after local PostgreSQL role `masarra` is available.

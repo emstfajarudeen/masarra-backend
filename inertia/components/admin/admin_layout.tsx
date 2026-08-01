@@ -4,12 +4,16 @@ import type { ReactNode } from 'react'
 
 const navItems = [
   { href: '/admin', label: 'لوحة التحكم', eyebrow: 'Dashboard' },
+  { href: '/admin/reports', label: 'التقارير', eyebrow: 'Reports' },
+  { href: '/admin/finance', label: 'المالية', eyebrow: 'Finance' },
+  { href: '/admin/users', label: 'المستخدمون', eyebrow: 'Users' },
   { href: '/admin/games', label: 'الألعاب', eyebrow: 'Games' },
   { href: '/admin/categories', label: 'الأقسام', eyebrow: 'Packs' },
   { href: '/admin/questions', label: 'الأسئلة', eyebrow: 'Questions' },
   { href: '/admin/media-assets', label: 'الوسائط', eyebrow: 'Media' },
   { href: '/admin/content-pages', label: 'الصفحات', eyebrow: 'Pages' },
   { href: '/admin/contact-messages', label: 'الرسائل', eyebrow: 'Messages' },
+  { href: '/admin/settings', label: 'الإعدادات', eyebrow: 'Settings' },
 ]
 
 interface AdminLayoutProps {

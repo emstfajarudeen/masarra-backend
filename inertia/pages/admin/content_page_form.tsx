@@ -47,12 +47,42 @@ const AdminContentPageForm: React.FC<ContentPageFormProps> = ({ mode, page }) =>
     }
   }
 
+  function updateStatus(status: ContentPageFormData['status']) {
+    if (!data.id) return
+    if (!window.confirm(`Change this page status to ${status}?`)) return
+    setProcessing(true)
+    router.patch(
+      `/admin/content-pages/${data.id}/status`,
+      { status },
+      { preserveScroll: true, onFinish: () => setProcessing(false) }
+    )
+  }
+
   return (
     <AdminLayout
       title={mode === 'edit' ? 'تعديل صفحة' : 'إضافة صفحة'}
       subtitle="صفحات عامة مثل الشروط والخصوصية والتعريف."
     >
       <form className="admin-editor-form" onSubmit={submit}>
+        {mode === 'edit' && data.id ? (
+          <section className="admin-panel">
+            <div className="admin-panel-header">
+              <div>
+                <h2>إجراءات النشر</h2>
+                <p>تغيير حالة الصفحة العامة بدون حذف.</p>
+              </div>
+            </div>
+            <div className="admin-action-grid">
+              <button type="button" disabled={processing} onClick={() => updateStatus('published')}>
+                Publish
+              </button>
+              <button type="button" disabled={processing} onClick={() => updateStatus('draft')}>
+                Move to draft
+              </button>
+            </div>
+          </section>
+        ) : null}
+
         <AdminFormPanel
           title="المحتوى"
           body="العربية حالياً، والإنجليزية يمكن إضافتها لاحقاً كتوسعة ترجمات."

@@ -10,6 +10,48 @@ import { errors as authErrors } from '@adonisjs/auth'
 import { DateTime } from 'luxon'
 
 export default class AuthController {
+  async webLoginPage({ inertia }: HttpContext) {
+    return inertia.render('auth/login', {})
+  }
+
+  async webLogin({ request, response, auth, session }: HttpContext) {
+    const payload = await request.validateUsing(loginValidator)
+    const login = this.normalizeLogin(payload.login)
+
+    try {
+      const user = await User.verifyCredentials(login, payload.password)
+
+      if (user.status !== 'active' || user.deletedAt !== null) {
+        throw new Exception('This account is not active.', {
+          status: 403,
+          code: 'ACCOUNT_NOT_ACTIVE',
+        })
+      }
+
+      await auth.use('web').login(user)
+
+      if (user.role !== 'admin') {
+        await auth.use('web').logout()
+        session.flash('error', 'Admin access is required.')
+        return response.redirect('/login')
+      }
+
+      return response.redirect('/admin')
+    } catch (error) {
+      if (error instanceof authErrors.E_INVALID_CREDENTIALS) {
+        session.flash('error', 'Invalid login credentials.')
+        return response.redirect('/login')
+      }
+
+      throw error
+    }
+  }
+
+  async webLogout({ response, auth }: HttpContext) {
+    await auth.use('web').logout()
+    return response.redirect('/login')
+  }
+
   async register({ request, response, auth }: HttpContext) {
     const payload = await request.validateUsing(registerValidator)
     const phoneNumber = normalizeKuwaitPhoneNumber(payload.phoneNumber)

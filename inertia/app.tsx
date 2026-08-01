@@ -10,13 +10,21 @@ import { resolvePageComponent } from '@adonisjs/inertia/helpers'
 
 const appName = import.meta.env.VITE_APP_NAME || 'AdonisJS'
 
+function withLayout(name: string, page: ReactElement<Data.SharedProps>) {
+  if (name.startsWith('admin/') || name.startsWith('auth/')) {
+    return page
+  }
+
+  return <Layout children={page} />
+}
+
 createInertiaApp({
   title: (title) => (title ? `${title} - ${appName}` : appName),
   resolve: (name) => {
     return resolvePageComponent(
       `./pages/${name}.tsx`,
       import.meta.glob('./pages/**/*.tsx'),
-      (page: ReactElement<Data.SharedProps>) => <Layout children={page} />
+      (page: ReactElement<Data.SharedProps>) => withLayout(name, page)
     )
   },
   setup({ el, App, props }) {

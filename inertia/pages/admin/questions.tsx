@@ -258,9 +258,14 @@ const AdminQuestions: React.FC<AdminQuestionsProps> = ({
                   {question.mediaAssetId ? <small>{question.mediaAssetId}</small> : null}
                 </div>
 
-                <a className="admin-row-link" href={`/admin/questions/${question.id}/edit`}>
-                  Edit question
-                </a>
+                <div className="admin-card-actions">
+                  <a className="admin-row-link" href={`/admin/questions/${question.id}`}>
+                    Preview
+                  </a>
+                  <a className="admin-row-link" href={`/admin/questions/${question.id}/edit`}>
+                    Edit question
+                  </a>
+                </div>
               </article>
             ))}
           </div>

@@ -107,6 +107,42 @@ export const adminPanelContactStatusValidator = vine.compile(
   })
 )
 
+export const adminPanelPublishStatusValidator = vine.compile(
+  vine.object({
+    params: vine.object({
+      id: vine.string().uuid(),
+    }),
+    status: vine.enum(['draft', 'published', 'archived']),
+  })
+)
+
+export const adminPanelContentPublishStatusValidator = vine.compile(
+  vine.object({
+    params: vine.object({
+      id: vine.string().uuid(),
+    }),
+    status: vine.enum(['draft', 'published']),
+  })
+)
+
+export const adminPanelCategoryAvailabilityValidator = vine.compile(
+  vine.object({
+    params: vine.object({
+      id: vine.string().uuid(),
+    }),
+    isEnabled: vine.boolean(),
+  })
+)
+
+export const adminPanelUserStatusValidator = vine.compile(
+  vine.object({
+    params: vine.object({
+      id: vine.string().uuid(),
+    }),
+    status: vine.enum(['active', 'suspended']),
+  })
+)
+
 export const adminPanelMediaLibraryFilterValidator = vine.compile(
   vine.object({
     type: vine.enum(['all', 'image', 'video', 'audio']).optional(),
@@ -138,6 +174,13 @@ export const adminPanelContentPageListFilterValidator = vine.compile(
 export const adminPanelContactMessageListFilterValidator = vine.compile(
   vine.object({
     status: vine.enum(['all', 'new', 'reviewed', 'archived']).optional(),
+  })
+)
+
+export const adminPanelUserListFilterValidator = vine.compile(
+  vine.object({
+    role: vine.enum(['all', 'user', 'admin']).optional(),
+    status: vine.enum(['all', 'active', 'suspended']).optional(),
   })
 )
 

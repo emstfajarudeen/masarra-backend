@@ -182,9 +182,14 @@ const AdminCategories: React.FC<AdminCategoriesProps> = ({ categories, filters, 
                   <span>
                     {category.isEnabled ? 'Visible during game setup' : 'Hidden from game setup'}
                   </span>
-                  <a className="admin-row-link" href={`/admin/categories/${category.id}/edit`}>
-                    Edit category
-                  </a>
+                  <div className="admin-card-actions">
+                    <a className="admin-row-link" href={`/admin/categories/${category.id}`}>
+                      View details
+                    </a>
+                    <a className="admin-row-link" href={`/admin/categories/${category.id}/edit`}>
+                      Edit category
+                    </a>
+                  </div>
                 </div>
               </article>
             ))}

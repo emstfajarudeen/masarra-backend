@@ -7,6 +7,14 @@ import { createInertiaApp } from '@inertiajs/react'
 import { TuyauProvider } from '@adonisjs/inertia/react'
 import { resolvePageComponent } from '@adonisjs/inertia/helpers'
 
+function withLayout(name: string, page: ReactElement<Data.SharedProps>) {
+  if (name.startsWith('admin/') || name.startsWith('auth/')) {
+    return page
+  }
+
+  return <Layout children={page} />
+}
+
 export default function render(page: any) {
   return createInertiaApp({
     page,
@@ -15,7 +23,7 @@ export default function render(page: any) {
       return resolvePageComponent(
         `./pages/${name}.tsx`,
         import.meta.glob('./pages/**/*.tsx', { eager: true }),
-        (resolvedPage: ReactElement<Data.SharedProps>) => <Layout children={resolvedPage} />
+        (resolvedPage: ReactElement<Data.SharedProps>) => withLayout(name, resolvedPage)
       )
     },
     setup: ({ App, props }) => {

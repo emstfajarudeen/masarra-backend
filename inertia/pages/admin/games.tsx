@@ -170,9 +170,14 @@ const AdminGames: React.FC<AdminGamesProps> = ({ games, filters, stats }) => {
                       ? 'Optional packs enabled'
                       : 'No optional packs'}
                   </span>
-                  <a className="admin-row-link" href={`/admin/games/${game.id}/edit`}>
-                    Edit game
-                  </a>
+                  <div className="admin-card-actions">
+                    <a className="admin-row-link" href={`/admin/games/${game.id}`}>
+                      View details
+                    </a>
+                    <a className="admin-row-link" href={`/admin/games/${game.id}/edit`}>
+                      Edit game
+                    </a>
+                  </div>
                 </div>
               </article>
             ))}

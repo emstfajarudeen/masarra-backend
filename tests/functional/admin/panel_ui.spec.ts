@@ -1,9 +1,12 @@
 import ContactMessage from '#models/contact_message'
 import ContentPage from '#models/content_page'
 import ContentPageTranslation from '#models/content_page_translation'
+import CreditTransaction from '#models/credit_transaction'
 import Game from '#models/game'
+import GameSession from '#models/game_session'
 import GameTranslation from '#models/game_translation'
 import MediaAsset from '#models/media_asset'
+import Payment from '#models/payment'
 import Question from '#models/question'
 import QuestionCategory from '#models/question_category'
 import QuestionCategoryTranslation from '#models/question_category_translation'
@@ -144,6 +147,47 @@ async function createContactMessage() {
   })
 }
 
+async function createUserSummaryRecords(user: User, game: Game) {
+  const gameSession = await GameSession.create({
+    hostUserId: user.id,
+    gameId: game.id,
+    status: 'completed',
+    selectedRoundCount: 5,
+    selectedQuestionDuration: 40,
+    creditReservationStatus: 'reserved',
+    reservedCreditCount: 5,
+    completedRoundCount: 5,
+    refundedCreditCount: 0,
+    endedAt: DateTime.utc(),
+  })
+
+  await CreditTransaction.create({
+    userId: user.id,
+    gameSessionId: gameSession.id,
+    type: 'grant',
+    amount: 20,
+    currency: 'round_credit',
+    idempotencyKey: `panel-credit-${user.id}`,
+    description: 'Panel test balance',
+    metadata: {},
+  })
+
+  await Payment.create({
+    userId: user.id,
+    gameSessionId: gameSession.id,
+    payableType: 'optional_category',
+    method: 'direct',
+    status: 'paid',
+    amount: '2.000',
+    currency: 'KWD',
+    provider: 'test',
+    providerReference: `panel-payment-${user.id}`,
+    idempotencyKey: `panel-payment-${user.id}`,
+    metadata: {},
+    paidAt: DateTime.utc(),
+  })
+}
+
 test.group('Admin panel UI', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
@@ -157,14 +201,47 @@ test.group('Admin panel UI', (group) => {
 
   test('renders admin dashboard and form pages for admin users', async ({ client }) => {
     const admin = await createUser('admin')
+    const regularUser = await createUser('user')
     const game = await createGame()
     const mediaAsset = await createMediaAsset(admin)
-    await createPanelQuestion(game, mediaAsset)
-    await createContentPage()
+    const question = await createPanelQuestion(game, mediaAsset)
+    const category = await QuestionCategory.findByOrFail('slug', 'panel-category')
+    const contentPage = await createContentPage()
     await createContactMessage()
+    await createUserSummaryRecords(regularUser, game)
 
     const dashboard = await client.get('/admin').loginAs(admin).header('Accept', 'text/html')
     dashboard.assertStatus(200)
+
+    const reports = await client
+      .get('/admin/reports?from=2026-01-01&to=2026-12-31')
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    reports.assertStatus(200)
+
+    const finance = await client
+      .get('/admin/finance?from=2026-01-01&to=2026-12-31')
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    finance.assertStatus(200)
+
+    const settings = await client
+      .get('/admin/settings')
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    settings.assertStatus(200)
+
+    const usersList = await client
+      .get('/admin/users?role=user&status=active')
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    usersList.assertStatus(200)
+
+    const userDetail = await client
+      .get(`/admin/users/${regularUser.id}`)
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    userDetail.assertStatus(200)
 
     const gamesList = await client
       .get('/admin/games?status=published&optionalCategories=enabled')
@@ -184,6 +261,19 @@ test.group('Admin panel UI', (group) => {
       .header('Accept', 'text/html')
     editGame.assertStatus(200)
 
+    const gameDetail = await client
+      .get(`/admin/games/${game.id}`)
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    gameDetail.assertStatus(200)
+
+    const gameStatus = await client
+      .patch(`/admin/games/${game.id}/status`)
+      .form({ status: 'archived' })
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    gameStatus.assertStatus(200)
+
     const createCategory = await client
       .get('/admin/categories/create')
       .loginAs(admin)
@@ -195,6 +285,26 @@ test.group('Admin panel UI', (group) => {
       .loginAs(admin)
       .header('Accept', 'text/html')
     categoryList.assertStatus(200)
+
+    const categoryDetail = await client
+      .get(`/admin/categories/${category.id}`)
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    categoryDetail.assertStatus(200)
+
+    const categoryStatus = await client
+      .patch(`/admin/categories/${category.id}/status`)
+      .form({ status: 'draft' })
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    categoryStatus.assertStatus(200)
+
+    const categoryAvailability = await client
+      .patch(`/admin/categories/${category.id}/availability`)
+      .form({ isEnabled: false })
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    categoryAvailability.assertStatus(200)
 
     const createQuestionPage = await client
       .get('/admin/questions/create')
@@ -208,6 +318,19 @@ test.group('Admin panel UI', (group) => {
       .header('Accept', 'text/html')
     questionBank.assertStatus(200)
 
+    const questionDetail = await client
+      .get(`/admin/questions/${question.id}`)
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    questionDetail.assertStatus(200)
+
+    const questionStatus = await client
+      .patch(`/admin/questions/${question.id}/status`)
+      .form({ status: 'draft' })
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    questionStatus.assertStatus(200)
+
     const mediaLibrary = await client
       .get('/admin/media-assets')
       .loginAs(admin)
@@ -220,10 +343,24 @@ test.group('Admin panel UI', (group) => {
       .header('Accept', 'text/html')
     contentPages.assertStatus(200)
 
+    const contentPageStatus = await client
+      .patch(`/admin/content-pages/${contentPage.id}/status`)
+      .form({ status: 'draft' })
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    contentPageStatus.assertStatus(200)
+
     const contactMessages = await client
       .get('/admin/contact-messages?status=new')
       .loginAs(admin)
       .header('Accept', 'text/html')
     contactMessages.assertStatus(200)
+
+    const userStatus = await client
+      .patch(`/admin/users/${regularUser.id}/status`)
+      .form({ status: 'suspended' })
+      .loginAs(admin)
+      .header('Accept', 'text/html')
+    userStatus.assertStatus(200)
   })
 })

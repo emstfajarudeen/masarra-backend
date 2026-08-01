@@ -35,26 +35,55 @@ const AdminReportsController = () => import('#controllers/admin/reports_controll
 const AdminMediaAssetsController = () => import('#controllers/admin/media_assets_controller')
 const AdminPanelController = () => import('#controllers/admin/panel_controller')
 
-router.on('/').renderInertia('home', {}).as('home')
+router
+  .get('/', async ({ auth, response }) => {
+    await auth.check()
+
+    if (auth.user?.role === 'admin') {
+      return response.redirect('/admin')
+    }
+
+    return response.redirect('/login')
+  })
+  .as('home')
+
+router.get('/login', [AuthController, 'webLoginPage']).use(middleware.guest())
+router.post('/login', [AuthController, 'webLogin']).use([middleware.guest(), authThrottle])
+router.post('/logout', [AuthController, 'webLogout']).use(middleware.auth())
 
 router
   .group(() => {
     router.get('/', [AdminPanelController, 'dashboard'])
+    router.get('/reports', [AdminPanelController, 'reports'])
+    router.get('/finance', [AdminPanelController, 'finance'])
+    router.get('/settings', [AdminPanelController, 'settings'])
+    router.get('/users', [AdminPanelController, 'users'])
+    router.get('/users/:id', [AdminPanelController, 'userShow'])
     router.get('/games', [AdminPanelController, 'games'])
     router.get('/games/create', [AdminPanelController, 'gameCreate'])
     router.post('/games', [AdminPanelController, 'gameStore'])
     router.get('/games/:id/edit', [AdminPanelController, 'gameEdit'])
     router.put('/games/:id', [AdminPanelController, 'gameUpdate'])
+    router.patch('/games/:id/status', [AdminPanelController, 'gameUpdateStatus'])
+    router.get('/games/:id', [AdminPanelController, 'gameShow'])
     router.get('/categories', [AdminPanelController, 'categories'])
     router.get('/categories/create', [AdminPanelController, 'categoryCreate'])
     router.post('/categories', [AdminPanelController, 'categoryStore'])
     router.get('/categories/:id/edit', [AdminPanelController, 'categoryEdit'])
     router.put('/categories/:id', [AdminPanelController, 'categoryUpdate'])
+    router.patch('/categories/:id/status', [AdminPanelController, 'categoryUpdateStatus'])
+    router.patch('/categories/:id/availability', [
+      AdminPanelController,
+      'categoryUpdateAvailability',
+    ])
+    router.get('/categories/:id', [AdminPanelController, 'categoryShow'])
     router.get('/questions', [AdminPanelController, 'questions'])
     router.get('/questions/create', [AdminPanelController, 'questionCreate'])
     router.post('/questions', [AdminPanelController, 'questionStore'])
     router.get('/questions/:id/edit', [AdminPanelController, 'questionEdit'])
     router.put('/questions/:id', [AdminPanelController, 'questionUpdate'])
+    router.patch('/questions/:id/status', [AdminPanelController, 'questionUpdateStatus'])
+    router.get('/questions/:id', [AdminPanelController, 'questionShow'])
     router.get('/media-assets', [AdminPanelController, 'mediaAssets'])
     router
       .post('/media-assets', [AdminMediaAssetsController, 'store'])
@@ -64,8 +93,10 @@ router
     router.post('/content-pages', [AdminPanelController, 'contentPageStore'])
     router.get('/content-pages/:id/edit', [AdminPanelController, 'contentPageEdit'])
     router.put('/content-pages/:id', [AdminPanelController, 'contentPageUpdate'])
+    router.patch('/content-pages/:id/status', [AdminPanelController, 'contentPageUpdateStatus'])
     router.get('/contact-messages', [AdminPanelController, 'contactMessages'])
     router.get('/contact-messages/:id', [AdminPanelController, 'contactMessageShow'])
+    router.patch('/users/:id/status', [AdminPanelController, 'userUpdateStatus'])
     router.patch('/contact-messages/:id/status', [
       AdminPanelController,
       'contactMessageUpdateStatus',
