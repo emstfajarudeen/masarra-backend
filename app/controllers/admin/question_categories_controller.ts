@@ -84,7 +84,6 @@ export default class AdminQuestionCategoriesController {
         gameId,
         slug: payload.slug,
         status: payload.status,
-        isEnabled: payload.isEnabled,
         priceAmount: payload.priceAmount ?? null,
         priceCurrency: payload.priceCurrency ?? 'KWD',
         sortOrder: payload.sortOrder ?? 0,
@@ -133,7 +132,6 @@ export default class AdminQuestionCategoriesController {
       record.merge({
         slug: payload.slug,
         status: payload.status,
-        isEnabled: payload.isEnabled,
         priceAmount: payload.priceAmount ?? null,
         priceCurrency: payload.priceCurrency ?? 'KWD',
         sortOrder: payload.sortOrder ?? 0,

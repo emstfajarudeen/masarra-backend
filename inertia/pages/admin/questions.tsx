@@ -4,7 +4,19 @@ import {
   AdminLayout,
   AdminStatusBadge,
 } from '~/components/admin/admin_layout'
-import type React from 'react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { EditIconLink, PreviewIconLink } from '~/components/admin/table_actions'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { SelectField } from '@/components/ui/select_field'
+import React, { useState } from 'react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 
 interface QuestionRow extends Record<string, JSONDataTypes> {
@@ -85,16 +97,16 @@ const AdminQuestions: React.FC<AdminQuestionsProps> = ({
   games,
   categories,
 }) => {
-  const filteredCategories = filters.gameId
-    ? categories.filter((category) => category.gameId === filters.gameId)
-    : categories
+  const [gameId, setGameId] = useState(filters.gameId || 'all')
+  const [categoryId, setCategoryId] = useState(filters.categoryId || 'all')
+
+  const filteredCategories =
+    gameId && gameId !== 'all'
+      ? categories.filter((category) => category.gameId === gameId)
+      : categories
 
   return (
-    <AdminLayout
-      title="الأسئلة"
-      subtitle="بنك الأسئلة مع فلاتر تشغيلية ومراجعة سريعة للوسائط ومنطق النقاط."
-      actions={<AdminButtonLink href="/admin/questions/create">+ Add question</AdminButtonLink>}
-    >
+    <AdminLayout title="الأسئلة">
       <section className="admin-question-bank-hero">
         <article>
           <span>Total questions</span>
@@ -119,85 +131,84 @@ const AdminQuestions: React.FC<AdminQuestionsProps> = ({
       </section>
 
       <section className="admin-panel">
-        <div className="admin-panel-header">
-          <div>
-            <h2>فلاتر بنك الأسئلة</h2>
-            <p>فلترة مباشرة من السيرفر حسب اللعبة، القسم، الحالة، النوع، والميكانيك.</p>
-          </div>
-        </div>
-
         <form className="admin-question-filters" method="get" action="/admin/questions">
-          <label>
-            <span>Game</span>
-            <select name="gameId" defaultValue={filters.gameId}>
-              <option value="">All games</option>
-              {games.map((game) => (
-                <option key={game.id} value={game.id}>
-                  {game.title}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="flex items-end gap-3 flex-wrap">
+            <div className="space-y-1">
+              <Label>Game</Label>
+              <input type="hidden" name="gameId" value={gameId === 'all' ? '' : gameId} />
+              <SelectField
+                value={gameId}
+                onValueChange={(value) => {
+                  setGameId(value)
+                  setCategoryId('all')
+                }}
+                options={[
+                  { value: 'all', label: 'All games' },
+                  ...games.map((game) => ({ value: game.id, label: game.title })),
+                ]}
+              />
+            </div>
 
-          <label>
-            <span>Category</span>
-            <select name="categoryId" defaultValue={filters.categoryId}>
-              <option value="">All categories</option>
-              {filteredCategories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.title}
-                </option>
-              ))}
-            </select>
-          </label>
+            <div className="space-y-1">
+              <Label>Category</Label>
+              <input
+                type="hidden"
+                name="categoryId"
+                value={categoryId === 'all' ? '' : categoryId}
+              />
+              <SelectField
+                value={categoryId}
+                onValueChange={setCategoryId}
+                options={[
+                  { value: 'all', label: 'All categories' },
+                  ...filteredCategories.map((category) => ({
+                    value: category.id,
+                    label: category.title,
+                  })),
+                ]}
+              />
+            </div>
 
-          <label>
-            <span>Status</span>
-            <select name="status" defaultValue={filters.status}>
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </label>
+            <div className="space-y-1">
+              <Label>Status</Label>
+              <SelectField
+                name="status"
+                defaultValue={filters.status}
+                options={statusOptions.map((status) => ({ value: status, label: status }))}
+              />
+            </div>
 
-          <label>
-            <span>Type</span>
-            <select name="type" defaultValue={filters.type}>
-              {typeOptions.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </label>
+            <div className="space-y-1">
+              <Label>Type</Label>
+              <SelectField
+                name="type"
+                defaultValue={filters.type}
+                options={typeOptions.map((type) => ({ value: type, label: type }))}
+              />
+            </div>
 
-          <label>
-            <span>Content</span>
-            <select name="contentMode" defaultValue={filters.contentMode}>
-              {contentModeOptions.map((mode) => (
-                <option key={mode} value={mode}>
-                  {mode}
-                </option>
-              ))}
-            </select>
-          </label>
+            <div className="space-y-1">
+              <Label>Content</Label>
+              <SelectField
+                name="contentMode"
+                defaultValue={filters.contentMode}
+                options={contentModeOptions.map((mode) => ({ value: mode, label: mode }))}
+              />
+            </div>
 
-          <label>
-            <span>Effect</span>
-            <select name="effectLogic" defaultValue={filters.effectLogic}>
-              {effectOptions.map((effect) => (
-                <option key={effect} value={effect}>
-                  {effect}
-                </option>
-              ))}
-            </select>
-          </label>
+            <div className="space-y-1">
+              <Label>Effect</Label>
+              <SelectField
+                name="effectLogic"
+                defaultValue={filters.effectLogic}
+                options={effectOptions.map((effect) => ({ value: effect, label: effect }))}
+              />
+            </div>
 
-          <div>
-            <button type="submit">Apply filters</button>
-            <a href="/admin/questions">Reset</a>
+            <Button type="submit">Apply filters</Button>
+            <Button variant="ghost" asChild>
+              <a href="/admin/questions">Reset</a>
+            </Button>
           </div>
         </form>
       </section>
@@ -206,8 +217,8 @@ const AdminQuestions: React.FC<AdminQuestionsProps> = ({
         <div className="admin-panel-header">
           <div>
             <h2>نتائج الأسئلة</h2>
-            <p>كل بطاقة تعرض ملخص السؤال، مصدر الوسائط، ومنطق التأثير قبل فتح التحرير.</p>
           </div>
+          <AdminButtonLink href="/admin/questions/create">+ Add question</AdminButtonLink>
         </div>
 
         {questions.length === 0 ? (
@@ -216,59 +227,48 @@ const AdminQuestions: React.FC<AdminQuestionsProps> = ({
             body="غيّر الفلاتر أو أضف سؤالاً جديداً من زر الإضافة."
           />
         ) : (
-          <div className="admin-question-card-grid">
-            {questions.map((question) => (
-              <article className="admin-question-card" key={question.id}>
-                <div className="admin-question-card-head">
-                  <div className="admin-question-media-mark">
-                    <span>{mediaIcon(question.contentMode)}</span>
-                    <small>{question.contentMode}</small>
-                  </div>
-                  <div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-px" />
+                <TableHead>Question</TableHead>
+                <TableHead>Game</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Effect</TableHead>
+                <TableHead>Points</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {questions.map((question) => (
+                <TableRow key={question.id}>
+                  <TableCell>
+                    <EditIconLink href={`/admin/questions/${question.id}/edit`} />
+                  </TableCell>
+                  <TableCell>
+                    {question.prompt.length > 60
+                      ? question.prompt.slice(0, 60) + '…'
+                      : question.prompt}
+                  </TableCell>
+                  <TableCell>{question.gameTitle}</TableCell>
+                  <TableCell>{question.categoryTitle ?? 'General'}</TableCell>
+                  <TableCell>{question.type}</TableCell>
+                  <TableCell>{effectLabel(question.effectLogic)}</TableCell>
+                  <TableCell>{question.basePoints}</TableCell>
+                  <TableCell>
                     <AdminStatusBadge status={question.status} />
-                    <strong>{question.basePoints} pts</strong>
-                  </div>
-                </div>
-
-                <h3>{question.prompt}</h3>
-
-                {question.correctAnswer ? (
-                  <p className="admin-question-answer">Answer: {question.correctAnswer}</p>
-                ) : null}
-
-                {question.explanation ? (
-                  <p className="admin-question-explanation">{question.explanation}</p>
-                ) : null}
-
-                <div className="admin-question-meta-grid">
-                  <span>{question.gameTitle}</span>
-                  <span>{question.categoryTitle ?? 'General'}</span>
-                  <span>{question.type}</span>
-                  <span>{effectLabel(question.effectLogic)}</span>
-                </div>
-
-                <div className="admin-question-media-row" dir="ltr">
-                  {question.mediaUrl ? (
-                    <a href={question.mediaUrl} target="_blank" rel="noreferrer">
-                      Open media
-                    </a>
-                  ) : (
-                    <span>No media file</span>
-                  )}
-                  {question.mediaAssetId ? <small>{question.mediaAssetId}</small> : null}
-                </div>
-
-                <div className="admin-card-actions">
-                  <a className="admin-row-link" href={`/admin/questions/${question.id}`}>
-                    Preview
-                  </a>
-                  <a className="admin-row-link" href={`/admin/questions/${question.id}/edit`}>
-                    Edit question
-                  </a>
-                </div>
-              </article>
-            ))}
-          </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="admin-row-actions">
+                      <PreviewIconLink href={`/admin/questions/${question.id}`} />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </section>
     </AdminLayout>

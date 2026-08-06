@@ -52,9 +52,9 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
           </div>
           <div>
             <nav>
-              {children.props.user ? (
+              {children.props.authUser ? (
                 <>
-                  <span>{children.props.user.initials}</span>
+                  <span>{children.props.authUser.initials}</span>
                   <form method="post" action="/logout">
                     <button type="submit"> Logout </button>
                   </form>

@@ -1,4 +1,7 @@
 import type { ReactNode } from 'react'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 
 export function AdminFormPanel({
   title,
@@ -34,12 +37,12 @@ export function AdminField({
   wide?: boolean
 }) {
   return (
-    <label className={`admin-field ${wide ? 'is-wide' : ''}`}>
-      <span>{label}</span>
+    <div className={cn('admin-field', wide && 'is-wide')}>
+      <Label className="text-sm font-semibold text-foreground">{label}</Label>
       {children}
-      {help ? <em>{help}</em> : null}
-      {error ? <small>{error}</small> : null}
-    </label>
+      {help ? <p className="text-xs text-muted-foreground">{help}</p> : null}
+      {error ? <p className="text-xs text-destructive font-medium">{error}</p> : null}
+    </div>
   )
 }
 
@@ -53,9 +56,16 @@ export function AdminFormNotice({
   tone?: 'info' | 'warning'
 }) {
   return (
-    <div className={`admin-form-notice admin-form-notice-${tone}`}>
-      <strong>{title}</strong>
-      <p>{body}</p>
+    <div
+      className={cn(
+        'rounded-lg border p-4 is-wide',
+        tone === 'warning'
+          ? 'border-yellow-200 bg-yellow-50 text-yellow-900'
+          : 'border-blue-200 bg-blue-50 text-blue-900'
+      )}
+    >
+      <strong className="text-sm font-semibold">{title}</strong>
+      <p className="text-sm mt-1">{body}</p>
     </div>
   )
 }
@@ -73,18 +83,20 @@ export function AdminSegmentedChoice<T extends string>({
 }) {
   return (
     <div className="admin-choice-block">
-      <span>{label}</span>
-      <div className="admin-segmented">
+      <Label className="text-sm font-semibold text-foreground">{label}</Label>
+      <div className="flex flex-wrap gap-2 mt-2">
         {options.map((option) => (
-          <button
+          <Button
             key={option.value}
             type="button"
-            className={value === option.value ? 'is-selected' : ''}
+            variant={value === option.value ? 'default' : 'outline'}
+            size="sm"
+            className="flex flex-col h-auto py-2 px-3"
             onClick={() => onChange(option.value)}
           >
-            <strong>{option.label}</strong>
-            <small>{option.caption}</small>
-          </button>
+            <strong className="text-xs">{option.label}</strong>
+            <small className="text-[10px] opacity-70">{option.caption}</small>
+          </Button>
         ))}
       </div>
     </div>
@@ -102,10 +114,12 @@ export function AdminFormActions({
 }) {
   return (
     <div className="admin-form-actions">
-      <a href={cancelHref}>Cancel</a>
-      <button type="submit" disabled={processing}>
+      <Button type="submit" disabled={processing}>
         {processing ? 'Saving…' : submitLabel}
-      </button>
+      </Button>
+      <Button variant="ghost" asChild>
+        <a href={cancelHref}>Cancel</a>
+      </Button>
     </div>
   )
 }
@@ -118,13 +132,13 @@ export function AdminMediaPlaceholder({
   mediaUrl: string
 }) {
   return (
-    <div className="admin-media-placeholder">
-      <div className="admin-media-icon">
-        {mode === 'image' ? '🖼️' : mode === 'video' ? '▶️' : '🎧'}
-      </div>
+    <div className="flex items-start gap-3 rounded-lg border border-dashed border-input p-4 mt-2">
+      <div className="text-2xl">{mode === 'image' ? '🖼️' : mode === 'video' ? '▶️' : '🎧'}</div>
       <div>
-        <strong>{mediaUrl ? 'Media URL attached' : `No ${mode} file attached yet`}</strong>
-        <p>
+        <strong className="text-sm">
+          {mediaUrl ? 'Media URL attached' : `No ${mode} file attached yet`}
+        </strong>
+        <p className="text-xs text-muted-foreground mt-1">
           {mediaUrl
             ? mediaUrl
             : 'Upload a local media file. The saved question will keep a storage-neutral media asset reference.'}

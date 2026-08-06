@@ -1,183 +1,110 @@
 import { useForm, usePage } from '@inertiajs/react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Eye, EyeOff, Gamepad2, ListChecks, Wallet } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 
+const highlights = [
+  { icon: Gamepad2, label: 'إدارة الألعاب والجلسات في مكان واحد' },
+  { icon: ListChecks, label: 'بنك الأسئلة والفئات بشكل منظم' },
+  { icon: Wallet, label: 'متابعة التقارير ومحافظ المستخدمين' },
+]
+
 const LoginPage: React.FC = () => {
   const { errors } = usePage().props as { errors: Record<string, string | undefined> }
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
-  const signInForm = useForm({
+  const [showPassword, setShowPassword] = useState(false)
+  const form = useForm({
     login: '',
     password: '',
   })
-  const signUpForm = useForm({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phoneNumber: '',
-    password: '',
-    passwordConfirmation: '',
-    termsAccepted: true,
-    preferredLocale: 'ar',
-  })
 
-  const submitSignIn = (event: React.FormEvent) => {
+  const submit = (event: React.FormEvent) => {
     event.preventDefault()
-    signInForm.post('/login')
-  }
-
-  const submitSignUp = (event: React.FormEvent) => {
-    event.preventDefault()
-    signUpForm.post('/api/v1/auth/register')
+    form.post('/login')
   }
 
   return (
-    <main className="admin-auth-shell" dir="rtl">
-      <section className="admin-auth-card">
-        <div className="admin-auth-brand">
-          <span>مسرة</span>
-          <small>Masarra Admin</small>
-        </div>
+    <main className="auth-page" dir="rtl">
+      <section className="auth-form-panel">
+        <div className="auth-form-card">
+          <img src="/logo.svg" alt="Masarra" className="auth-form-logo" />
 
-        <div className="admin-auth-copy">
-          <span className="admin-kicker">Admin access</span>
-          <h1>تسجيل الدخول</h1>
-          <p>
-            ادخل بحساب إداري للوصول إلى لوحة التحكم، أو أنشئ حساب مستخدم جديد لاختبار التدفق العام.
-          </p>
-        </div>
+          <div className="auth-form-heading">
+            <h1>تسجيل الدخول</h1>
+            <p>مرحباً بعودتك، سجّل الدخول للمتابعة إلى لوحة التحكم.</p>
+          </div>
 
-        <div className="admin-auth-tabs" role="tablist" aria-label="Authentication mode">
-          <button
-            type="button"
-            className={mode === 'signin' ? 'is-active' : ''}
-            onClick={() => setMode('signin')}
-          >
-            Sign in
-          </button>
-          <button
-            type="button"
-            className={mode === 'signup' ? 'is-active' : ''}
-            onClick={() => setMode('signup')}
-          >
-            Sign up
-          </button>
-        </div>
-
-        {mode === 'signin' ? (
-          <form className="admin-auth-form" onSubmit={submitSignIn}>
-            <label>
-              <span>Email or phone</span>
-              <input
+          <form className="auth-form" onSubmit={submit}>
+            <div className="space-y-2">
+              <Label>البريد الإلكتروني أو الهاتف</Label>
+              <Input
                 dir="ltr"
-                value={signInForm.data.login}
+                value={form.data.login}
                 data-invalid={Boolean(errors.login)}
-                onChange={(event) => signInForm.setData('login', event.target.value)}
+                onChange={(event) => form.setData('login', event.target.value)}
+                autoFocus
               />
-              {errors.login ? <small>{errors.login}</small> : null}
-            </label>
-
-            <label>
-              <span>Password</span>
-              <input
-                dir="ltr"
-                type="password"
-                value={signInForm.data.password}
-                data-invalid={Boolean(errors.password)}
-                onChange={(event) => signInForm.setData('password', event.target.value)}
-              />
-              {errors.password ? <small>{errors.password}</small> : null}
-            </label>
-
-            <button type="submit" disabled={signInForm.processing}>
-              {signInForm.processing ? 'Signing in…' : 'Login to dashboard'}
-            </button>
-          </form>
-        ) : (
-          <form className="admin-auth-form" onSubmit={submitSignUp}>
-            <div className="admin-auth-two-col">
-              <label>
-                <span>First name</span>
-                <input
-                  value={signUpForm.data.firstName}
-                  data-invalid={Boolean(errors.firstName)}
-                  onChange={(event) => signUpForm.setData('firstName', event.target.value)}
-                />
-                {errors.firstName ? <small>{errors.firstName}</small> : null}
-              </label>
-
-              <label>
-                <span>Last name</span>
-                <input
-                  value={signUpForm.data.lastName}
-                  data-invalid={Boolean(errors.lastName)}
-                  onChange={(event) => signUpForm.setData('lastName', event.target.value)}
-                />
-                {errors.lastName ? <small>{errors.lastName}</small> : null}
-              </label>
+              {errors.login ? (
+                <p className="text-xs text-destructive font-medium">{errors.login}</p>
+              ) : null}
             </div>
 
-            <label>
-              <span>Email</span>
-              <input
-                dir="ltr"
-                type="email"
-                value={signUpForm.data.email}
-                data-invalid={Boolean(errors.email)}
-                onChange={(event) => signUpForm.setData('email', event.target.value)}
-              />
-              {errors.email ? <small>{errors.email}</small> : null}
-            </label>
-
-            <label>
-              <span>Phone number</span>
-              <input
-                dir="ltr"
-                value={signUpForm.data.phoneNumber}
-                data-invalid={Boolean(errors.phoneNumber)}
-                placeholder="+9655XXXXXXX"
-                onChange={(event) => signUpForm.setData('phoneNumber', event.target.value)}
-              />
-              {errors.phoneNumber ? <small>{errors.phoneNumber}</small> : null}
-            </label>
-
-            <div className="admin-auth-two-col">
-              <label>
-                <span>Password</span>
-                <input
+            <div className="space-y-2">
+              <Label>كلمة المرور</Label>
+              <div className="relative">
+                <Input
                   dir="ltr"
-                  type="password"
-                  value={signUpForm.data.password}
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.data.password}
                   data-invalid={Boolean(errors.password)}
-                  onChange={(event) => signUpForm.setData('password', event.target.value)}
+                  onChange={(event) => form.setData('password', event.target.value)}
+                  className="pr-10"
                 />
-                {errors.password ? <small>{errors.password}</small> : null}
-              </label>
-
-              <label>
-                <span>Confirm password</span>
-                <input
-                  dir="ltr"
-                  type="password"
-                  value={signUpForm.data.passwordConfirmation}
-                  data-invalid={Boolean(errors.passwordConfirmation)}
-                  onChange={(event) =>
-                    signUpForm.setData('passwordConfirmation', event.target.value)
-                  }
-                />
-                {errors.passwordConfirmation ? <small>{errors.passwordConfirmation}</small> : null}
-              </label>
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowPassword((current) => !current)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {errors.password ? (
+                <p className="text-xs text-destructive font-medium">{errors.password}</p>
+              ) : null}
             </div>
 
-            <button type="submit" disabled={signUpForm.processing}>
-              {signUpForm.processing ? 'Creating account…' : 'Create account'}
-            </button>
-
-            <p className="admin-auth-note">
-              Signup creates a normal user account. Admin dashboard access still requires an admin
-              role.
-            </p>
+            <Button type="submit" className="w-full auth-submit" disabled={form.processing}>
+              {form.processing ? 'جاري تسجيل الدخول…' : 'تسجيل الدخول'}
+            </Button>
           </form>
-        )}
+        </div>
+      </section>
+
+      <section className="auth-brand-panel">
+        <span className="auth-brand-glow auth-brand-glow-1" />
+        <span className="auth-brand-glow auth-brand-glow-2" />
+
+        <div className="auth-brand-inner">
+          <h2 className="auth-brand-title">لوحة تحكم مسرة</h2>
+          <p className="auth-brand-subtitle">
+            أدر الألعاب والأسئلة والمستخدمين والتقارير من منصة واحدة سريعة ومنظمة.
+          </p>
+
+          <ul className="auth-brand-points">
+            {highlights.map(({ icon: Icon, label }) => (
+              <li key={label} className="auth-brand-point">
+                <span className="auth-brand-point-icon">
+                  <Icon className="h-4 w-4" />
+                </span>
+                {label}
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
     </main>
   )

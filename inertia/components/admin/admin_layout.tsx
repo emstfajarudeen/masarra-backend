@@ -1,6 +1,15 @@
-import { usePage } from '@inertiajs/react'
+import { router, usePage } from '@inertiajs/react'
 import { Link } from '@adonisjs/inertia/react'
+import { Inbox, LogOut, User as UserIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown_menu'
 
 const navItems = [
   { href: '/admin', label: 'لوحة التحكم', eyebrow: 'Dashboard' },
@@ -13,12 +22,18 @@ const navItems = [
   { href: '/admin/media-assets', label: 'الوسائط', eyebrow: 'Media' },
   { href: '/admin/content-pages', label: 'الصفحات', eyebrow: 'Pages' },
   { href: '/admin/contact-messages', label: 'الرسائل', eyebrow: 'Messages' },
-  { href: '/admin/settings', label: 'الإعدادات', eyebrow: 'Settings' },
 ]
+
+interface AuthUser {
+  id: string
+  email: string
+  fullName: string
+  initials: string
+}
 
 interface AdminLayoutProps {
   title: string
-  subtitle: string
+  subtitle?: string
   actions?: ReactNode
   children: ReactNode
 }
@@ -31,15 +46,53 @@ export function AdminButtonLink({ href, children }: { href: string; children: Re
   )
 }
 
-export function AdminLayout({ title, subtitle, actions, children }: AdminLayoutProps) {
+function ProfileMenu() {
+  const { props } = usePage<{ authUser?: AuthUser }>()
+  const user = props.authUser
+
+  const logout = () => {
+    router.post('/logout')
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="admin-profile-trigger" aria-label="Account menu">
+        <span className="admin-profile-avatar">{user?.initials ?? 'AD'}</span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuLabel>
+          <div className="flex flex-col">
+            <span>{user?.fullName ?? 'Admin'}</span>
+            <span className="text-xs font-normal text-muted-foreground" dir="ltr">
+              {user?.email ?? ''}
+            </span>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => router.visit('/admin/profile')}>
+          <UserIcon />
+          <span>Profile</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={logout}
+          className="text-destructive focus:text-destructive"
+        >
+          <LogOut />
+          <span>Logout</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+export function AdminLayout({ title, actions, children }: AdminLayoutProps) {
   const { url } = usePage()
 
   return (
     <div className="admin-shell" dir="rtl">
       <aside className="admin-sidebar">
         <div className="admin-brand">
-          <span className="admin-brand-mark">مسرة</span>
-          <span className="admin-brand-caption">Masarra Admin</span>
+          <img src="/logo.svg" alt="Masarra" className="admin-brand-logo" />
         </div>
 
         <nav className="admin-nav" aria-label="Admin navigation">
@@ -62,12 +115,13 @@ export function AdminLayout({ title, subtitle, actions, children }: AdminLayoutP
 
       <section className="admin-workspace">
         <header className="admin-topbar">
-          <div>
-            <p className="admin-kicker">إدارة منصة مسرة</p>
+          <div className="admin-topbar-info">
             <h1>{title}</h1>
-            <p>{subtitle}</p>
           </div>
-          {actions ? <div className="admin-actions">{actions}</div> : null}
+          <div className="admin-topbar-end">
+            {actions ? <div className="admin-actions">{actions}</div> : null}
+            <ProfileMenu />
+          </div>
         </header>
 
         {children}
@@ -83,7 +137,9 @@ export function AdminStatusBadge({ status }: { status: string }) {
 export function AdminEmptyState({ title, body }: { title: string; body: string }) {
   return (
     <div className="admin-empty">
-      <div className="admin-empty-orb" />
+      <div className="admin-empty-icon">
+        <Inbox strokeWidth={1.5} />
+      </div>
       <h2>{title}</h2>
       <p>{body}</p>
     </div>

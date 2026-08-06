@@ -42,7 +42,7 @@ export default class AdminReportsController {
       Game.query().count('* as total').first(),
       Game.query().where('status', 'published').count('* as total').first(),
       QuestionCategory.query().count('* as total').first(),
-      QuestionCategory.query().where('is_enabled', true).count('* as total').first(),
+      QuestionCategory.query().where('status', 'published').count('* as total').first(),
       Question.query().count('* as total').first(),
       Question.query().where('status', 'published').count('* as total').first(),
       this.applyRange(GameSession.query(), range).count('* as total').first(),

@@ -4,8 +4,11 @@ import {
   AdminLayout,
   AdminStatusBadge,
 } from '~/components/admin/admin_layout'
+import { ConfirmDialog } from '~/components/admin/confirm_dialog'
+import { Button } from '@/components/ui/button'
 import { useForm } from '@inertiajs/react'
 import type React from 'react'
+import { useState } from 'react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 
 interface GameDetail extends Record<string, JSONDataTypes> {
@@ -39,7 +42,6 @@ interface CategoryRow extends Record<string, JSONDataTypes> {
   slug: string
   title: string
   status: string
-  isEnabled: boolean
   priceAmount: string | null
   priceCurrency: string
 }
@@ -79,17 +81,20 @@ const AdminGameShow: React.FC<AdminGameShowProps> = ({
   latestSessions,
 }) => {
   const statusForm = useForm({ status: game.status })
+  const [pendingStatus, setPendingStatus] = useState<'draft' | 'published' | 'archived' | null>(
+    null
+  )
 
-  const updateStatus = (status: 'draft' | 'published' | 'archived') => {
-    if (!window.confirm(`Change this game status to ${status}?`)) return
-    statusForm.setData('status', status)
+  const confirmStatusChange = () => {
+    if (!pendingStatus) return
+    statusForm.setData('status', pendingStatus)
     statusForm.patch(`/admin/games/${game.id}/status`, { preserveScroll: true })
+    setPendingStatus(null)
   }
 
   return (
     <AdminLayout
       title={game.title}
-      subtitle="قراءة تفصيلية لقواعد اللعبة وربطها بالأقسام والجلسات."
       actions={<AdminButtonLink href={`/admin/games/${game.id}/edit`}>Edit game</AdminButtonLink>}
     >
       <section className="admin-detail-hero">
@@ -168,27 +173,30 @@ const AdminGameShow: React.FC<AdminGameShowProps> = ({
             </div>
           </div>
           <div className="admin-action-grid">
-            <button
+            <Button
               type="button"
+              variant="outline"
               disabled={statusForm.processing}
-              onClick={() => updateStatus('published')}
+              onClick={() => setPendingStatus('published')}
             >
               Publish
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
               disabled={statusForm.processing}
-              onClick={() => updateStatus('draft')}
+              onClick={() => setPendingStatus('draft')}
             >
               Move to draft
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="destructive"
               disabled={statusForm.processing}
-              onClick={() => updateStatus('archived')}
+              onClick={() => setPendingStatus('archived')}
             >
               Archive
-            </button>
+            </Button>
           </div>
         </article>
       </section>
@@ -223,7 +231,6 @@ const AdminGameShow: React.FC<AdminGameShowProps> = ({
                   <p dir="ltr">{category.slug}</p>
                 </div>
                 <AdminStatusBadge status={category.status} />
-                <span>{category.isEnabled ? 'Enabled' : 'Disabled'}</span>
                 <strong>
                   {category.priceAmount ?? '—'} {category.priceCurrency}
                 </strong>
@@ -274,6 +281,19 @@ const AdminGameShow: React.FC<AdminGameShowProps> = ({
           </table>
         </div>
       </section>
+
+      <ConfirmDialog
+        open={pendingStatus !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingStatus(null)
+        }}
+        title="تغيير حالة اللعبة"
+        description={pendingStatus ? `هل تريد تغيير حالة اللعبة إلى "${pendingStatus}"؟` : undefined}
+        confirmLabel="تأكيد"
+        cancelLabel="إلغاء"
+        destructive={pendingStatus === 'archived'}
+        onConfirm={confirmStatusChange}
+      />
     </AdminLayout>
   )
 }

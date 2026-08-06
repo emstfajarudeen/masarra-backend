@@ -129,7 +129,6 @@ test.group('Admin CMS APIs', (group) => {
       .json({
         slug: 'ramadan',
         status: 'published',
-        isEnabled: true,
         priceAmount: '2.000',
         priceCurrency: 'KWD',
         sortOrder: 1,
@@ -151,7 +150,6 @@ test.group('Admin CMS APIs', (group) => {
       data: {
         category: {
           slug: 'ramadan',
-          isEnabled: true,
           priceAmount: '2.000',
         },
       },

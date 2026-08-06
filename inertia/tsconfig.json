@@ -3,9 +3,17 @@
   "compilerOptions": {
     "module": "ESNext",
     "jsx": "react-jsx",
+    "baseUrl": ".",
     "paths": {
-      "~/*": ["./*"],
-      "@generated/*": ["../.adonisjs/client/*"]
+      "~/*": [
+        "./*"
+      ],
+      "@/*": [
+        "./*"
+      ],
+      "@generated/*": [
+        "../.adonisjs/client/*"
+      ]
     }
   },
   "include": [

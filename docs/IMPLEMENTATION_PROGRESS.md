@@ -319,3 +319,23 @@
 - [x] Run typecheck.
 - [x] Run production build.
 - [ ] Run full functional suite after local PostgreSQL role `masarra` is available.
+
+## Step 28 — Admin Form UI Refinement
+
+- [x] Tighten and constrain shared admin form layouts.
+- [x] Match admin form width to the full-width list-page content area.
+- [x] Clarify game setup field labels without changing behavior.
+- [x] Add a reusable themed checkbox with explicit spacing and interaction states.
+- [x] Run targeted formatting, lint and production build.
+- [ ] Run full check after local PostgreSQL role `masarra` is available.
+
+## Step 29 — isEnabled Removal
+
+- [x] Removed `isEnabled` column from `QuestionCategory` model and all backend layers.
+- [x] Added drop-column migration `1785348816836`.
+- [x] Updated all validators, controllers, transformer, service, and routes.
+- [x] Removed from all admin UI pages (form, show, list, game detail).
+- [x] Updated all functional tests to use status as the single availability gate.
+- [x] Status=published is now the single source of truth for category visibility.
+- [x] Run typecheck and production build.
+- [ ] Run full test suite after local PostgreSQL role `masarra` is available.

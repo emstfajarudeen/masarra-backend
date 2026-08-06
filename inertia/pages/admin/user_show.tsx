@@ -1,6 +1,9 @@
 import { AdminLayout, AdminStatusBadge } from '~/components/admin/admin_layout'
+import { ConfirmDialog } from '~/components/admin/confirm_dialog'
+import { Button } from '@/components/ui/button'
 import { useForm } from '@inertiajs/react'
 import type React from 'react'
+import { useState } from 'react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 
 interface UserDetail extends Record<string, JSONDataTypes> {
@@ -86,24 +89,18 @@ const AdminUserShow: React.FC<AdminUserShowProps> = ({
   timeline,
 }) => {
   const statusForm = useForm({ status: user.status })
+  const [pendingStatus, setPendingStatus] = useState<'active' | 'suspended' | null>(null)
 
-  const updateStatus = (status: 'active' | 'suspended') => {
-    if (
-      !window.confirm(
-        status === 'suspended' ? 'Suspend this user account?' : 'Activate this user account?'
-      )
-    ) {
-      return
-    }
-
-    statusForm.setData('status', status)
+  const confirmStatusChange = () => {
+    if (!pendingStatus) return
+    statusForm.setData('status', pendingStatus)
     statusForm.patch(`/admin/users/${user.id}/status`, { preserveScroll: true })
+    setPendingStatus(null)
   }
 
   return (
     <AdminLayout
       title={user.fullName}
-      subtitle="ملف إداري تفصيلي للمستخدم: الحساب، الرصيد، الجلسات، المدفوعات، والحركة الأخيرة."
     >
       <section className="admin-user-detail-hero">
         <div className="admin-user-detail-avatar">{user.initials}</div>
@@ -179,20 +176,22 @@ const AdminUserShow: React.FC<AdminUserShowProps> = ({
           </div>
           <div className="admin-user-moderation-note admin-action-grid">
             <AdminStatusBadge status={user.status} />
-            <button
+            <Button
               type="button"
+              variant="outline"
               disabled={statusForm.processing}
-              onClick={() => updateStatus('active')}
+              onClick={() => setPendingStatus('active')}
             >
               Activate
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="destructive"
               disabled={statusForm.processing}
-              onClick={() => updateStatus('suspended')}
+              onClick={() => setPendingStatus('suspended')}
             >
               Suspend
-            </button>
+            </Button>
             <p>Self-suspension is blocked by the backend.</p>
           </div>
         </article>
@@ -291,6 +290,21 @@ const AdminUserShow: React.FC<AdminUserShowProps> = ({
           ))}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={pendingStatus !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingStatus(null)
+        }}
+        title="تغيير حالة الحساب"
+        description={
+          pendingStatus === 'suspended' ? 'هل تريد إيقاف هذا الحساب؟' : 'هل تريد تفعيل هذا الحساب؟'
+        }
+        confirmLabel="تأكيد"
+        cancelLabel="إلغاء"
+        destructive={pendingStatus === 'suspended'}
+        onConfirm={confirmStatusChange}
+      />
     </AdminLayout>
   )
 }

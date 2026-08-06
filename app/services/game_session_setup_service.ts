@@ -129,7 +129,6 @@ export default class GameSessionSetupService {
       .where('game_id', game.id)
       .where('slug', categorySlug)
       .where('status', 'published')
-      .where('is_enabled', true)
       .first()
 
     if (!category) {
@@ -272,7 +271,6 @@ export default class GameSessionSetupService {
     const categories = await QuestionCategory.query()
       .where('game_id', gameId)
       .where('status', 'published')
-      .where('is_enabled', true)
       .preload('translations', (query) => this.translationQuery(query, locale))
       .orderBy('sort_order', 'asc')
       .orderBy('created_at', 'desc')

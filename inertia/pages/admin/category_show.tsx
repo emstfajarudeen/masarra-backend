@@ -1,6 +1,9 @@
 import { AdminButtonLink, AdminLayout, AdminStatusBadge } from '~/components/admin/admin_layout'
+import { ConfirmDialog } from '~/components/admin/confirm_dialog'
+import { Button } from '@/components/ui/button'
 import { useForm } from '@inertiajs/react'
 import type React from 'react'
+import { useState } from 'react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 
 interface CategoryDetail extends Record<string, JSONDataTypes> {
@@ -10,7 +13,6 @@ interface CategoryDetail extends Record<string, JSONDataTypes> {
   status: string
   title: string
   description: string | null
-  isEnabled: boolean
   priceAmount: string | null
   priceCurrency: string
   gameTitle: string
@@ -50,31 +52,20 @@ const formatDate = (value: string | null) => {
 
 const AdminCategoryShow: React.FC<AdminCategoryShowProps> = ({ category, stats, questions }) => {
   const statusForm = useForm({ status: category.status })
-  const availabilityForm = useForm({ isEnabled: category.isEnabled })
+  const [pendingStatus, setPendingStatus] = useState<'draft' | 'published' | 'archived' | null>(
+    null
+  )
 
-  const updateStatus = (status: 'draft' | 'published' | 'archived') => {
-    if (!window.confirm(`Change this category status to ${status}?`)) return
-    statusForm.setData('status', status)
+  const confirmStatusChange = () => {
+    if (!pendingStatus) return
+    statusForm.setData('status', pendingStatus)
     statusForm.patch(`/admin/categories/${category.id}/status`, { preserveScroll: true })
-  }
-
-  const updateAvailability = (isEnabled: boolean) => {
-    if (
-      !window.confirm(
-        isEnabled ? 'Enable this category in setup?' : 'Hide this category from setup?'
-      )
-    )
-      return
-    availabilityForm.setData('isEnabled', isEnabled)
-    availabilityForm.patch(`/admin/categories/${category.id}/availability`, {
-      preserveScroll: true,
-    })
+    setPendingStatus(null)
   }
 
   return (
     <AdminLayout
       title={category.title}
-      subtitle="تفاصيل قسم اختياري يظهر أثناء إعداد اللعبة عند تفعيله."
       actions={
         <AdminButtonLink href={`/admin/categories/${category.id}/edit`}>
           Edit category
@@ -89,7 +80,6 @@ const AdminCategoryShow: React.FC<AdminCategoryShowProps> = ({ category, stats, 
           <div className="admin-detail-hero-meta">
             <AdminStatusBadge status={category.status} />
             <span>{category.gameTitle}</span>
-            <span>{category.isEnabled ? 'Enabled in setup' : 'Hidden from setup'}</span>
           </div>
         </div>
         <div className="admin-detail-score">
@@ -113,11 +103,6 @@ const AdminCategoryShow: React.FC<AdminCategoryShowProps> = ({ category, stats, 
           <span>Paid payments</span>
           <strong>{stats.paidPayments}</strong>
           <p>confirmed payments</p>
-        </article>
-        <article>
-          <span>Availability</span>
-          <strong>{category.isEnabled ? 'On' : 'Off'}</strong>
-          <p>setup visibility</p>
         </article>
       </section>
 
@@ -149,38 +134,34 @@ const AdminCategoryShow: React.FC<AdminCategoryShowProps> = ({ category, stats, 
           <div className="admin-panel-header">
             <div>
               <h2>إجراءات الإدارة</h2>
-              <p>تغييرات آمنة على حالة القسم وظهوره.</p>
+              <p>تغيير حالة القسم بدون حذف.</p>
             </div>
           </div>
           <div className="admin-action-grid">
-            <button
+            <Button
               type="button"
+              variant="outline"
               disabled={statusForm.processing}
-              onClick={() => updateStatus('published')}
+              onClick={() => setPendingStatus('published')}
             >
               Publish
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
               disabled={statusForm.processing}
-              onClick={() => updateStatus('draft')}
+              onClick={() => setPendingStatus('draft')}
             >
               Move to draft
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="destructive"
               disabled={statusForm.processing}
-              onClick={() => updateStatus('archived')}
+              onClick={() => setPendingStatus('archived')}
             >
               Archive
-            </button>
-            <button
-              type="button"
-              disabled={availabilityForm.processing}
-              onClick={() => updateAvailability(!category.isEnabled)}
-            >
-              {category.isEnabled ? 'Disable in setup' : 'Enable in setup'}
-            </button>
+            </Button>
           </div>
         </article>
       </section>
@@ -211,6 +192,19 @@ const AdminCategoryShow: React.FC<AdminCategoryShowProps> = ({ category, stats, 
           ))}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={pendingStatus !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingStatus(null)
+        }}
+        title="تغيير حالة القسم"
+        description={pendingStatus ? `هل تريد تغيير حالة القسم إلى "${pendingStatus}"؟` : undefined}
+        confirmLabel="تأكيد"
+        cancelLabel="إلغاء"
+        destructive={pendingStatus === 'archived'}
+        onConfirm={confirmStatusChange}
+      />
     </AdminLayout>
   )
 }

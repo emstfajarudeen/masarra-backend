@@ -94,7 +94,6 @@ const AdminMediaAssets: React.FC<AdminMediaAssetsProps> = ({ mediaAssets, filter
   return (
     <AdminLayout
       title="مكتبة الوسائط"
-      subtitle="إدارة ملفات الأسئلة المخزنة محلياً حالياً، مع إبقاء المرجع قابلاً للنقل إلى S3 لاحقاً."
       actions={
         <AdminButtonLink href="/admin/questions/create">+ Add media question</AdminButtonLink>
       }
@@ -126,7 +125,6 @@ const AdminMediaAssets: React.FC<AdminMediaAssetsProps> = ({ mediaAssets, filter
         <div className="admin-panel-header">
           <div>
             <h2>الملفات</h2>
-            <p>استخدم الفلاتر لمراجعة الملفات حسب النوع أو صلاحية الظهور.</p>
           </div>
           <div className="admin-media-filters" dir="ltr">
             {typeFilters.map(([type, label, caption]) => (

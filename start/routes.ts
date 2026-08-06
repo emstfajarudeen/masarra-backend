@@ -56,7 +56,8 @@ router
     router.get('/', [AdminPanelController, 'dashboard'])
     router.get('/reports', [AdminPanelController, 'reports'])
     router.get('/finance', [AdminPanelController, 'finance'])
-    router.get('/settings', [AdminPanelController, 'settings'])
+    router.get('/profile', [AdminPanelController, 'profile'])
+    router.patch('/profile/password', [AdminPanelController, 'profileUpdatePassword'])
     router.get('/users', [AdminPanelController, 'users'])
     router.get('/users/:id', [AdminPanelController, 'userShow'])
     router.get('/games', [AdminPanelController, 'games'])
@@ -72,10 +73,6 @@ router
     router.get('/categories/:id/edit', [AdminPanelController, 'categoryEdit'])
     router.put('/categories/:id', [AdminPanelController, 'categoryUpdate'])
     router.patch('/categories/:id/status', [AdminPanelController, 'categoryUpdateStatus'])
-    router.patch('/categories/:id/availability', [
-      AdminPanelController,
-      'categoryUpdateAvailability',
-    ])
     router.get('/categories/:id', [AdminPanelController, 'categoryShow'])
     router.get('/questions', [AdminPanelController, 'questions'])
     router.get('/questions/create', [AdminPanelController, 'questionCreate'])

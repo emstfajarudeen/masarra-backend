@@ -4,6 +4,18 @@ import {
   AdminLayout,
   AdminStatusBadge,
 } from '~/components/admin/admin_layout'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { EditIconLink } from '~/components/admin/table_actions'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { SelectField } from '@/components/ui/select_field'
 import type React from 'react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 
@@ -46,11 +58,7 @@ function pagePurpose(slug: string) {
 
 const AdminContentPages: React.FC<AdminContentPagesProps> = ({ pages, filters, stats }) => {
   return (
-    <AdminLayout
-      title="الصفحات"
-      subtitle="إدارة صفحات الشروط، الخصوصية، والمحتوى العام."
-      actions={<AdminButtonLink href="/admin/content-pages/create">+ Add page</AdminButtonLink>}
-    >
+    <AdminLayout title="الصفحات">
       <section className="admin-content-hero">
         <article>
           <span>Total pages</span>
@@ -70,27 +78,20 @@ const AdminContentPages: React.FC<AdminContentPagesProps> = ({ pages, filters, s
       </section>
 
       <section className="admin-panel">
-        <div className="admin-panel-header">
-          <div>
-            <h2>فلاتر الصفحات</h2>
-            <p>راجع المحتوى القانوني والعام حسب حالة النشر.</p>
-          </div>
-        </div>
-
         <form className="admin-list-filters" method="get" action="/admin/content-pages">
-          <label>
-            <span>Status</span>
-            <select name="status" defaultValue={filters.status}>
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="space-y-1">
+            <Label>Status</Label>
+            <SelectField
+              name="status"
+              defaultValue={filters.status}
+              options={statusOptions.map((status) => ({ value: status, label: status }))}
+            />
+          </div>
           <div>
-            <button type="submit">Apply filters</button>
-            <a href="/admin/content-pages">Reset</a>
+            <Button type="submit">Apply filters</Button>
+            <Button variant="ghost" asChild>
+              <a href="/admin/content-pages">Reset</a>
+            </Button>
           </div>
         </form>
       </section>
@@ -99,8 +100,8 @@ const AdminContentPages: React.FC<AdminContentPagesProps> = ({ pages, filters, s
         <div className="admin-panel-header">
           <div>
             <h2>صفحات المحتوى</h2>
-            <p>صفحات عامة متعددة اللغة، عربية الآن وجاهزة للإنجليزية لاحقاً.</p>
           </div>
+          <AdminButtonLink href="/admin/content-pages/create">+ Add page</AdminButtonLink>
         </div>
 
         {pages.length === 0 ? (
@@ -109,32 +110,34 @@ const AdminContentPages: React.FC<AdminContentPagesProps> = ({ pages, filters, s
             body="غيّر الفلاتر أو أضف صفحات الشروط والخصوصية من زر الإضافة."
           />
         ) : (
-          <div className="admin-content-card-grid">
-            {pages.map((page) => (
-              <article className="admin-content-card" key={page.id}>
-                <div className="admin-content-card-head">
-                  <div>
-                    <span>{pagePurpose(page.slug)}</span>
-                    <h3>{page.title}</h3>
-                    <p dir="ltr">{page.slug}</p>
-                  </div>
-                  <AdminStatusBadge status={page.status} />
-                </div>
-
-                {page.excerpt ? <strong>{page.excerpt}</strong> : null}
-                <p>{page.bodyPreview || 'No Arabic content preview yet.'}</p>
-
-                <div className="admin-config-footer">
-                  <span>
-                    Updated {page.updatedAt ? new Date(page.updatedAt).toLocaleDateString() : '—'}
-                  </span>
-                  <a className="admin-row-link" href={`/admin/content-pages/${page.id}/edit`}>
-                    Edit page
-                  </a>
-                </div>
-              </article>
-            ))}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-px" />
+                <TableHead>Title</TableHead>
+                <TableHead>Slug</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Updated</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pages.map((page) => (
+                <TableRow key={page.id}>
+                  <TableCell>
+                    <EditIconLink href={`/admin/content-pages/${page.id}/edit`} />
+                  </TableCell>
+                  <TableCell>{page.title}</TableCell>
+                  <TableCell dir="ltr">{page.slug}</TableCell>
+                  <TableCell>
+                    <AdminStatusBadge status={page.status} />
+                  </TableCell>
+                  <TableCell>
+                    {page.updatedAt ? new Date(page.updatedAt).toLocaleDateString() : '—'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </section>
     </AdminLayout>

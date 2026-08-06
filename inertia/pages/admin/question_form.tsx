@@ -7,6 +7,10 @@ import {
   AdminSegmentedChoice,
 } from '~/components/admin/admin_form'
 import { AdminLayout } from '~/components/admin/admin_layout'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { SelectField } from '@/components/ui/select_field'
+import { Textarea } from '@/components/ui/textarea'
 import { router, usePage } from '@inertiajs/react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 import type { RequestPayload } from '@inertiajs/core'
@@ -176,7 +180,6 @@ const AdminQuestionForm: React.FC<QuestionFormProps> = ({
   return (
     <AdminLayout
       title={mode === 'edit' ? 'تعديل سؤال' : 'إضافة سؤال'}
-      subtitle="نموذج السؤال يدعم النص والصورة والفيديو والصوت كبيانات منظمة داخل metadata."
     >
       <form className="admin-editor-form" onSubmit={submit}>
         <AdminFormPanel
@@ -202,7 +205,7 @@ const AdminQuestionForm: React.FC<QuestionFormProps> = ({
               error={errors.mediaAssetId ?? errors.mediaUrl ?? uploadError ?? undefined}
               help="الصيغ المدعومة: صور، فيديو، وصوت. الحد الحالي 50MB."
             >
-              <input
+              <Input
                 type="file"
                 accept={`${data.contentMode}/*`}
                 disabled={uploading || processing}
@@ -211,37 +214,48 @@ const AdminQuestionForm: React.FC<QuestionFormProps> = ({
                   if (file) void uploadMedia(file)
                 }}
               />
-              <input
+              <Input
                 dir="ltr"
                 placeholder="Stored media URL"
+                className="mt-2"
                 value={data.mediaUrl}
                 onChange={(event) => update('mediaUrl', event.target.value)}
               />
               {data.mediaAssetId ? (
-                <em dir="ltr">Media asset: {data.mediaAssetId}</em>
+                <p className="text-xs text-muted-foreground mt-1" dir="ltr">
+                  Media asset: {data.mediaAssetId}
+                </p>
               ) : uploading ? (
-                <em>Uploading media…</em>
+                <p className="text-xs text-muted-foreground mt-1">Uploading media…</p>
               ) : null}
               <AdminMediaPlaceholder mode={data.contentMode} mediaUrl={data.mediaUrl} />
               {compatibleMediaAssets.length > 0 ? (
-                <div className="admin-media-picker">
-                  <span>Choose existing {data.contentMode}</span>
-                  <div>
+                <div className="mt-3 space-y-2">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Choose existing {data.contentMode}
+                  </span>
+                  <div className="flex flex-wrap gap-2">
                     {compatibleMediaAssets.map((asset) => (
-                      <button
+                      <Button
                         key={asset.id}
                         type="button"
-                        className={data.mediaAssetId === asset.id ? 'is-selected' : ''}
+                        variant={data.mediaAssetId === asset.id ? 'default' : 'outline'}
+                        size="sm"
+                        className="flex flex-col h-auto py-2 px-3"
                         onClick={() => selectMediaAsset(asset)}
                       >
-                        <strong>{asset.originalName}</strong>
-                        <small dir="ltr">{asset.mimeType}</small>
-                      </button>
+                        <strong className="text-xs">{asset.originalName}</strong>
+                        <small className="text-[10px] opacity-70" dir="ltr">
+                          {asset.mimeType}
+                        </small>
+                      </Button>
                     ))}
                   </div>
                 </div>
               ) : (
-                <em>No reusable {data.contentMode} assets yet.</em>
+                <p className="text-xs text-muted-foreground mt-2">
+                  No reusable {data.contentMode} assets yet.
+                </p>
               )}
             </AdminField>
           ) : null}
@@ -256,23 +270,18 @@ const AdminQuestionForm: React.FC<QuestionFormProps> = ({
             error={errors.gameId}
             help={games.length === 0 ? 'يجب إنشاء لعبة قبل إضافة سؤال.' : undefined}
           >
-            <select
+            <SelectField
               value={data.gameId}
               disabled={games.length === 0}
-              onChange={(event) => {
+              onValueChange={(value) => {
                 setData((current) => ({
                   ...current,
-                  gameId: event.target.value,
+                  gameId: value,
                   questionCategoryId: null,
                 }))
               }}
-            >
-              {games.map((game) => (
-                <option key={game.id} value={game.id}>
-                  {game.title}
-                </option>
-              ))}
-            </select>
+              options={games.map((game) => ({ value: game.id, label: game.title }))}
+            />
           </AdminField>
           <AdminField
             label="القسم الاختياري"
@@ -283,33 +292,35 @@ const AdminQuestionForm: React.FC<QuestionFormProps> = ({
                 : 'لا توجد أقسام مرتبطة بهذه اللعبة حتى الآن.'
             }
           >
-            <select
-              value={data.questionCategoryId ?? ''}
+            <SelectField
+              value={data.questionCategoryId ?? 'none'}
               disabled={!selectedGameHasCategories}
-              onChange={(event) => update('questionCategoryId', event.target.value || null)}
-            >
-              <option value="">بدون قسم</option>
-              {filteredCategories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.title}
-                </option>
-              ))}
-            </select>
+              onValueChange={(value) =>
+                update('questionCategoryId', value === 'none' ? null : value)
+              }
+              options={[
+                { value: 'none', label: 'بدون قسم' },
+                ...filteredCategories.map((category) => ({
+                  value: category.id,
+                  label: category.title,
+                })),
+              ]}
+            />
           </AdminField>
           <AdminField label="السؤال" wide error={errors.prompt}>
-            <textarea
+            <Textarea
               value={data.prompt}
               onChange={(event) => update('prompt', event.target.value)}
             />
           </AdminField>
           <AdminField label="الإجابة الصحيحة" error={errors.correctAnswer}>
-            <input
+            <Input
               value={data.correctAnswer}
               onChange={(event) => update('correctAnswer', event.target.value)}
             />
           </AdminField>
           <AdminField label="النقاط" error={errors.basePoints}>
-            <input
+            <Input
               type="number"
               min="1"
               max="100"
@@ -318,7 +329,7 @@ const AdminQuestionForm: React.FC<QuestionFormProps> = ({
             />
           </AdminField>
           <AdminField label="شرح الإجابة" wide error={errors.explanation}>
-            <textarea
+            <Textarea
               value={data.explanation}
               onChange={(event) => update('explanation', event.target.value)}
             />
@@ -338,25 +349,25 @@ const AdminQuestionForm: React.FC<QuestionFormProps> = ({
             />
           </div>
           <AdminField label="نوع السجل" error={errors.type}>
-            <select
+            <SelectField
               value={data.type}
-              onChange={(event) => update('type', event.target.value as QuestionFormData['type'])}
-            >
-              <option value="knowledge">Knowledge</option>
-              <option value="challenge">Challenge</option>
-            </select>
+              onValueChange={(value) => update('type', value as QuestionFormData['type'])}
+              options={[
+                { value: 'knowledge', label: 'Knowledge' },
+                { value: 'challenge', label: 'Challenge' },
+              ]}
+            />
           </AdminField>
           <AdminField label="الحالة" error={errors.status}>
-            <select
+            <SelectField
               value={data.status}
-              onChange={(event) =>
-                update('status', event.target.value as QuestionFormData['status'])
-              }
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-              <option value="archived">Archived</option>
-            </select>
+              onValueChange={(value) => update('status', value as QuestionFormData['status'])}
+              options={[
+                { value: 'draft', label: 'Draft' },
+                { value: 'published', label: 'Published' },
+                { value: 'archived', label: 'Archived' },
+              ]}
+            />
           </AdminField>
         </AdminFormPanel>
 

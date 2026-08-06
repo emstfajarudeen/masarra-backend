@@ -11,7 +11,8 @@ export type ScannedRoutes = {
     'admin_panel.dashboard': { paramsTuple?: []; params?: {} }
     'admin_panel.reports': { paramsTuple?: []; params?: {} }
     'admin_panel.finance': { paramsTuple?: []; params?: {} }
-    'admin_panel.settings': { paramsTuple?: []; params?: {} }
+    'admin_panel.profile': { paramsTuple?: []; params?: {} }
+    'admin_panel.profile_update_password': { paramsTuple?: []; params?: {} }
     'admin_panel.users': { paramsTuple?: []; params?: {} }
     'admin_panel.user_show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.games': { paramsTuple?: []; params?: {} }
@@ -27,7 +28,6 @@ export type ScannedRoutes = {
     'admin_panel.category_edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.category_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.category_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
-    'admin_panel.category_update_availability': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.category_show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.questions': { paramsTuple?: []; params?: {} }
     'admin_panel.question_create': { paramsTuple?: []; params?: {} }
@@ -118,7 +118,7 @@ export type ScannedRoutes = {
     'admin_panel.dashboard': { paramsTuple?: []; params?: {} }
     'admin_panel.reports': { paramsTuple?: []; params?: {} }
     'admin_panel.finance': { paramsTuple?: []; params?: {} }
-    'admin_panel.settings': { paramsTuple?: []; params?: {} }
+    'admin_panel.profile': { paramsTuple?: []; params?: {} }
     'admin_panel.users': { paramsTuple?: []; params?: {} }
     'admin_panel.user_show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.games': { paramsTuple?: []; params?: {} }
@@ -176,7 +176,7 @@ export type ScannedRoutes = {
     'admin_panel.dashboard': { paramsTuple?: []; params?: {} }
     'admin_panel.reports': { paramsTuple?: []; params?: {} }
     'admin_panel.finance': { paramsTuple?: []; params?: {} }
-    'admin_panel.settings': { paramsTuple?: []; params?: {} }
+    'admin_panel.profile': { paramsTuple?: []; params?: {} }
     'admin_panel.users': { paramsTuple?: []; params?: {} }
     'admin_panel.user_show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.games': { paramsTuple?: []; params?: {} }
@@ -261,20 +261,10 @@ export type ScannedRoutes = {
     'admin_api_media_assets.store': { paramsTuple?: []; params?: {} }
     'admin_content_pages.store': { paramsTuple?: []; params?: {} }
   }
-  PUT: {
-    'admin_panel.game_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
-    'admin_panel.category_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
-    'admin_panel.question_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
-    'admin_panel.content_page_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
-    'admin_games.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
-    'admin_question_categories.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
-    'admin_questions.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
-    'admin_content_pages.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
-  }
   PATCH: {
+    'admin_panel.profile_update_password': { paramsTuple?: []; params?: {} }
     'admin_panel.game_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.category_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
-    'admin_panel.category_update_availability': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.question_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.content_page_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.user_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -284,6 +274,16 @@ export type ScannedRoutes = {
     'game_sessions.update_teams': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'game_sessions.update_settings': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_contact_messages.update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+  }
+  PUT: {
+    'admin_panel.game_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.category_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.question_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.content_page_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_games.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_question_categories.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_questions.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_content_pages.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
 }
 declare module '@adonisjs/core/types/http' {

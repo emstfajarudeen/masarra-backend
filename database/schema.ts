@@ -7,19 +7,536 @@
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
-export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'updatedAt'] as const
-  $columns = UserSchema.$columns
+export class ContactMessageSchema extends BaseModel {
+  static $columns = ['createdAt', 'email', 'fullName', 'id', 'ipAddress', 'message', 'status', 'updatedAt', 'userAgent'] as const
+  $columns = ContactMessageSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
   @column()
   declare email: string
   @column()
-  declare fullName: string | null
+  declare fullName: string
   @column({ isPrimary: true })
-  declare id: number
+  declare id: string
+  @column()
+  declare ipAddress: string | null
+  @column()
+  declare message: string
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userAgent: string | null
+}
+
+export class ContentPageTranslationSchema extends BaseModel {
+  static $columns = ['body', 'contentPageId', 'createdAt', 'excerpt', 'id', 'locale', 'metadata', 'title', 'updatedAt'] as const
+  $columns = ContentPageTranslationSchema.$columns
+  @column()
+  declare body: string
+  @column()
+  declare contentPageId: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare excerpt: string | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare locale: string
+  @column()
+  declare metadata: any
+  @column()
+  declare title: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class ContentPageSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'publishedAt', 'slug', 'sortOrder', 'status', 'updatedAt'] as const
+  $columns = ContentPageSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column.dateTime()
+  declare publishedAt: DateTime | null
+  @column()
+  declare slug: string
+  @column()
+  declare sortOrder: number
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class CreditTransactionSchema extends BaseModel {
+  static $columns = ['amount', 'createdAt', 'currency', 'description', 'gameSessionId', 'id', 'idempotencyKey', 'metadata', 'type', 'updatedAt', 'userId'] as const
+  $columns = CreditTransactionSchema.$columns
+  @column()
+  declare amount: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare currency: string
+  @column()
+  declare description: string | null
+  @column()
+  declare gameSessionId: string | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare idempotencyKey: string
+  @column()
+  declare metadata: any
+  @column()
+  declare type: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: string
+}
+
+export class GameSessionRoundAnswerSchema extends BaseModel {
+  static $columns = ['createdAt', 'gameSessionRoundId', 'id', 'isCorrect', 'metadata', 'pointsAwarded', 'scoringRule', 'submittedAnswer', 'teamId', 'updatedAt'] as const
+  $columns = GameSessionRoundAnswerSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare gameSessionRoundId: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isCorrect: boolean | null
+  @column()
+  declare metadata: any
+  @column()
+  declare pointsAwarded: number
+  @column()
+  declare scoringRule: string
+  @column()
+  declare submittedAnswer: string | null
+  @column()
+  declare teamId: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class GameSessionRoundSchema extends BaseModel {
+  static $columns = ['abandonedAt', 'awardedPoints', 'cancelledAt', 'completedAt', 'createdAt', 'creditOutcome', 'gameSessionId', 'id', 'metadata', 'questionId', 'roundNumber', 'scoringRule', 'startedAt', 'status', 'updatedAt', 'winnerTeamId'] as const
+  $columns = GameSessionRoundSchema.$columns
+  @column.dateTime()
+  declare abandonedAt: DateTime | null
+  @column()
+  declare awardedPoints: number
+  @column.dateTime()
+  declare cancelledAt: DateTime | null
+  @column.dateTime()
+  declare completedAt: DateTime | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare creditOutcome: string
+  @column()
+  declare gameSessionId: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare metadata: any
+  @column()
+  declare questionId: string | null
+  @column()
+  declare roundNumber: number
+  @column()
+  declare scoringRule: string | null
+  @column.dateTime()
+  declare startedAt: DateTime | null
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare winnerTeamId: string | null
+}
+
+export class GameSessionTeamSchema extends BaseModel {
+  static $columns = ['color', 'createdAt', 'gameSessionId', 'id', 'name', 'normalizedName', 'score', 'sortOrder', 'updatedAt'] as const
+  $columns = GameSessionTeamSchema.$columns
+  @column()
+  declare color: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare gameSessionId: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare name: string
+  @column()
+  declare normalizedName: string
+  @column()
+  declare score: number
+  @column()
+  declare sortOrder: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class GameSessionSchema extends BaseModel {
+  static $columns = ['categoryPaymentId', 'completedRoundCount', 'createdAt', 'creditReservationStatus', 'creditsReservedAt', 'currentRoundNumber', 'endedAt', 'gameId', 'hostUserId', 'id', 'lockedAt', 'optionalQuestionCategoryId', 'refundedCreditCount', 'reservedCreditCount', 'selectedQuestionDuration', 'selectedRoundCount', 'startedAt', 'status', 'stopReason', 'stoppedAt', 'updatedAt'] as const
+  $columns = GameSessionSchema.$columns
+  @column()
+  declare categoryPaymentId: string | null
+  @column()
+  declare completedRoundCount: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare creditReservationStatus: string
+  @column.dateTime()
+  declare creditsReservedAt: DateTime | null
+  @column()
+  declare currentRoundNumber: number | null
+  @column.dateTime()
+  declare endedAt: DateTime | null
+  @column()
+  declare gameId: string
+  @column()
+  declare hostUserId: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column.dateTime()
+  declare lockedAt: DateTime | null
+  @column()
+  declare optionalQuestionCategoryId: string | null
+  @column()
+  declare refundedCreditCount: number
+  @column()
+  declare reservedCreditCount: number
+  @column()
+  declare selectedQuestionDuration: number | null
+  @column()
+  declare selectedRoundCount: number | null
+  @column.dateTime()
+  declare startedAt: DateTime | null
+  @column()
+  declare status: string
+  @column()
+  declare stopReason: string | null
+  @column.dateTime()
+  declare stoppedAt: DateTime | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class GameTranslationSchema extends BaseModel {
+  static $columns = ['createdAt', 'description', 'gameId', 'id', 'instructions', 'locale', 'metadata', 'title', 'updatedAt'] as const
+  $columns = GameTranslationSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare description: string | null
+  @column()
+  declare gameId: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare instructions: string | null
+  @column()
+  declare locale: string
+  @column()
+  declare metadata: any
+  @column()
+  declare title: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class GameSchema extends BaseModel {
+  static $columns = ['allowedQuestionDurations', 'allowedRoundCounts', 'baseRoundCreditCost', 'createdAt', 'id', 'maxTeamCount', 'minTeamCount', 'optionalCategoriesEnabled', 'publishedAt', 'slug', 'sortOrder', 'status', 'updatedAt'] as const
+  $columns = GameSchema.$columns
+  @column()
+  declare allowedQuestionDurations: any
+  @column()
+  declare allowedRoundCounts: any
+  @column()
+  declare baseRoundCreditCost: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare maxTeamCount: number
+  @column()
+  declare minTeamCount: number
+  @column()
+  declare optionalCategoriesEnabled: boolean
+  @column.dateTime()
+  declare publishedAt: DateTime | null
+  @column()
+  declare slug: string
+  @column()
+  declare sortOrder: number
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class MediaAssetSchema extends BaseModel {
+  static $columns = ['createdAt', 'deletedAt', 'disk', 'extension', 'fileName', 'id', 'metadata', 'mimeType', 'originalName', 'path', 'sizeBytes', 'updatedAt', 'uploaderUserId', 'url', 'visibility'] as const
+  $columns = MediaAssetSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column.dateTime()
+  declare deletedAt: DateTime | null
+  @column()
+  declare disk: string
+  @column()
+  declare extension: string
+  @column()
+  declare fileName: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare metadata: any
+  @column()
+  declare mimeType: string
+  @column()
+  declare originalName: string
+  @column()
+  declare path: string
+  @column()
+  declare sizeBytes: bigint | number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare uploaderUserId: string | null
+  @column()
+  declare url: string | null
+  @column()
+  declare visibility: string
+}
+
+export class PaymentSchema extends BaseModel {
+  static $columns = ['amount', 'createdAt', 'currency', 'expiresAt', 'gameSessionId', 'id', 'idempotencyKey', 'metadata', 'method', 'paidAt', 'payableType', 'provider', 'providerReference', 'status', 'updatedAt', 'userId'] as const
+  $columns = PaymentSchema.$columns
+  @column()
+  declare amount: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare currency: string
+  @column.dateTime()
+  declare expiresAt: DateTime | null
+  @column()
+  declare gameSessionId: string | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare idempotencyKey: string
+  @column()
+  declare metadata: any
+  @column()
+  declare method: string
+  @column.dateTime()
+  declare paidAt: DateTime | null
+  @column()
+  declare payableType: string
+  @column()
+  declare provider: string | null
+  @column()
+  declare providerReference: string | null
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: string
+}
+
+export class QuestionCategorySchema extends BaseModel {
+  static $columns = ['createdAt', 'gameId', 'id', 'isEnabled', 'priceAmount', 'priceCurrency', 'publishedAt', 'slug', 'sortOrder', 'status', 'updatedAt'] as const
+  $columns = QuestionCategorySchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare gameId: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isEnabled: boolean
+  @column()
+  declare priceAmount: string | null
+  @column()
+  declare priceCurrency: string
+  @column.dateTime()
+  declare publishedAt: DateTime | null
+  @column()
+  declare slug: string
+  @column()
+  declare sortOrder: number
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class QuestionCategoryTranslationSchema extends BaseModel {
+  static $columns = ['createdAt', 'description', 'id', 'locale', 'metadata', 'questionCategoryId', 'title', 'updatedAt'] as const
+  $columns = QuestionCategoryTranslationSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare description: string | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare locale: string
+  @column()
+  declare metadata: any
+  @column()
+  declare questionCategoryId: string
+  @column()
+  declare title: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class QuestionTranslationSchema extends BaseModel {
+  static $columns = ['correctAnswer', 'createdAt', 'explanation', 'id', 'locale', 'metadata', 'prompt', 'questionId', 'updatedAt'] as const
+  $columns = QuestionTranslationSchema.$columns
+  @column()
+  declare correctAnswer: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare explanation: string | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare locale: string
+  @column()
+  declare metadata: any
+  @column()
+  declare prompt: string
+  @column()
+  declare questionId: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class QuestionSchema extends BaseModel {
+  static $columns = ['basePoints', 'createdAt', 'gameId', 'id', 'metadata', 'publishedAt', 'questionCategoryId', 'sortOrder', 'status', 'type', 'updatedAt'] as const
+  $columns = QuestionSchema.$columns
+  @column()
+  declare basePoints: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare gameId: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare metadata: any
+  @column.dateTime()
+  declare publishedAt: DateTime | null
+  @column()
+  declare questionCategoryId: string | null
+  @column()
+  declare sortOrder: number
+  @column()
+  declare status: string
+  @column()
+  declare type: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class RateLimitSchema extends BaseModel {
+  static $columns = ['expire', 'key', 'points'] as const
+  $columns = RateLimitSchema.$columns
+  @column()
+  declare expire: bigint | number | null
+  @column({ isPrimary: true })
+  declare key: string
+  @column()
+  declare points: number
+}
+
+export class SessionSchema extends BaseModel {
+  static $columns = ['data', 'expiresAt', 'id', 'userId'] as const
+  $columns = SessionSchema.$columns
+  @column()
+  declare data: string
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare userId: string | null
+}
+
+export class UserVerificationCodeSchema extends BaseModel {
+  static $columns = ['attempts', 'channel', 'codeHash', 'consumedAt', 'createdAt', 'destination', 'expiresAt', 'id', 'purpose', 'updatedAt', 'userId'] as const
+  $columns = UserVerificationCodeSchema.$columns
+  @column()
+  declare attempts: number
+  @column()
+  declare channel: string
+  @column()
+  declare codeHash: string
+  @column.dateTime()
+  declare consumedAt: DateTime | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare destination: string
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare purpose: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: string
+}
+
+export class UserSchema extends BaseModel {
+  static $columns = ['createdAt', 'deletedAt', 'email', 'emailVerifiedAt', 'firstName', 'id', 'lastName', 'password', 'phoneNumber', 'phoneVerifiedAt', 'preferredLocale', 'role', 'status', 'termsAcceptedAt', 'updatedAt'] as const
+  $columns = UserSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column.dateTime()
+  declare deletedAt: DateTime | null
+  @column()
+  declare email: string
+  @column.dateTime()
+  declare emailVerifiedAt: DateTime | null
+  @column()
+  declare firstName: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare lastName: string
   @column({ serializeAs: null })
   declare password: string
+  @column()
+  declare phoneNumber: string
+  @column.dateTime()
+  declare phoneVerifiedAt: DateTime | null
+  @column()
+  declare preferredLocale: string
+  @column()
+  declare role: string
+  @column()
+  declare status: string
+  @column.dateTime()
+  declare termsAcceptedAt: DateTime
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

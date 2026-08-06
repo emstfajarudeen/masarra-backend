@@ -22,9 +22,6 @@ export default class QuestionCategory extends BaseModel {
   declare status: QuestionCategoryStatus
 
   @column()
-  declare isEnabled: boolean
-
-  @column()
   declare priceAmount: string | null
 
   @column()

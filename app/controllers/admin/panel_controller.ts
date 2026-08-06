@@ -19,12 +19,12 @@ import {
   adminPanelContentPageFormValidator,
   adminPanelContentPublishStatusValidator,
   adminPanelCategoryListFilterValidator,
-  adminPanelCategoryAvailabilityValidator,
   adminPanelContactMessageListFilterValidator,
   adminPanelContentPageListFilterValidator,
   adminPanelGameFormValidator,
   adminPanelGameListFilterValidator,
   adminPanelIdParamsValidator,
+  adminPanelPasswordChangeValidator,
   adminPanelMediaLibraryFilterValidator,
   adminPanelPublishStatusValidator,
   adminPanelQuestionListFilterValidator,
@@ -37,7 +37,6 @@ import { serializeMediaAsset } from '#transformers/media_asset_transformer'
 import { Exception } from '@adonisjs/core/exceptions'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
-import env from '#start/env'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 import { DateTime } from 'luxon'
 
@@ -58,7 +57,7 @@ export default class AdminPanelController {
       newMessages,
       latestSessions,
     ] = await Promise.all([
-      User.query().count('* as total').first(),
+      User.query().where('role', 'user').count('* as total').first(),
       GameSession.query().where('status', 'active').count('* as total').first(),
       GameSession.query().where('status', 'completed').count('* as total').first(),
       Game.query().count('* as total').first(),
@@ -153,7 +152,10 @@ export default class AdminPanelController {
     const role = filters.role ?? 'all'
     const status = filters.status ?? 'all'
 
-    const query = User.query().whereNull('deleted_at').orderBy('created_at', 'desc')
+    const query = User.query()
+      .whereNull('deleted_at')
+      .where('role', 'user')
+      .orderBy('created_at', 'desc')
 
     if (role !== 'all') {
       query.where('role', role)
@@ -163,17 +165,22 @@ export default class AdminPanelController {
       query.where('status', status)
     }
 
-    const [users, total, active, suspended, admins, creditRows, sessionRows, paymentRows] =
+    const [users, total, active, suspended, creditRows, sessionRows, paymentRows] =
       await Promise.all([
         query.limit(80),
-        User.query().whereNull('deleted_at').count('* as total').first(),
-        User.query().whereNull('deleted_at').where('status', 'active').count('* as total').first(),
+        User.query().whereNull('deleted_at').where('role', 'user').count('* as total').first(),
         User.query()
           .whereNull('deleted_at')
+          .where('role', 'user')
+          .where('status', 'active')
+          .count('* as total')
+          .first(),
+        User.query()
+          .whereNull('deleted_at')
+          .where('role', 'user')
           .where('status', 'suspended')
           .count('* as total')
           .first(),
-        User.query().whereNull('deleted_at').where('role', 'admin').count('* as total').first(),
         db
           .from('credit_transactions')
           .select('user_id')
@@ -214,7 +221,6 @@ export default class AdminPanelController {
         total: this.countValue(total),
         active: this.countValue(active),
         suspended: this.countValue(suspended),
-        admins: this.countValue(admins),
       },
     })
   }
@@ -316,9 +322,14 @@ export default class AdminPanelController {
       latestSessions,
       latestPayments,
     ] = await Promise.all([
-      User.query().whereNull('deleted_at').count('* as total').first(),
-      User.query().whereNull('deleted_at').where('status', 'active').count('* as total').first(),
-      this.applyReportRange(User.query().whereNull('deleted_at'), range)
+      User.query().whereNull('deleted_at').where('role', 'user').count('* as total').first(),
+      User.query()
+        .whereNull('deleted_at')
+        .where('role', 'user')
+        .where('status', 'active')
+        .count('* as total')
+        .first(),
+      this.applyReportRange(User.query().whereNull('deleted_at').where('role', 'user'), range)
         .count('* as total')
         .first(),
       this.applyReportRange(GameSession.query(), range).count('* as total').first(),
@@ -336,7 +347,7 @@ export default class AdminPanelController {
       this.groupReportCount('game_sessions', 'status', range),
       this.groupReportCount('payments', 'status', range),
       this.groupReportCount('payments', 'method', range),
-      this.groupReportCount('users', 'status', range),
+      this.groupReportCount('users', 'status', range, { role: 'user' }),
       this.groupReportCount('credit_transactions', 'type', range),
       this.mostPlayedGames(range),
       GameSession.query()
@@ -453,43 +464,32 @@ export default class AdminPanelController {
     })
   }
 
-  async settings({ inertia }: HttpContext) {
-    return inertia.render('admin/settings', {
-      settings: {
-        runtime: {
-          nodeEnv: env.get('NODE_ENV'),
-          appUrl: env.get('APP_URL'),
-          timezone: 'UTC persistence / app-local display',
-        },
-        localization: {
-          defaultLocale: 'ar',
-          supportedLocales: ['ar', 'en'],
-          currentContentLocale: 'ar',
-          englishReady: true,
-        },
-        storage: {
-          activeDisk: 'local',
-          futureDisks: ['s3-compatible'],
-          publicMediaRoute: '/api/v1/media-assets/:id/file',
-        },
-        auth: {
-          otpChannel: 'mobile',
-          passwordLogin: true,
-          googleLoginPlaceholder: true,
-        },
-        payments: {
-          providerConfirmed: false,
-          supportedMethods: ['direct', 'wallet'],
-          optionalCategoryPayments: true,
-          manualCreditAdjustmentsEnabled: false,
-        },
-        gameplay: {
-          maxTeams: 6,
-          roundCreditRule: 'charge when backend marks round completed',
-          userCancelRule: 'host/user initiated cancellation forfeits played rounds only',
-        },
+  async profile({ inertia, auth }: HttpContext) {
+    const user = auth.getUserOrFail() as User
+
+    return inertia.render('admin/profile', {
+      profile: {
+        fullName: user.fullName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
       },
     })
+  }
+
+  async profileUpdatePassword({ request, response, session, auth }: HttpContext) {
+    const user = auth.getUserOrFail() as User
+    const payload = await request.validateUsing(adminPanelPasswordChangeValidator)
+
+    if (!(await user.verifyPassword(payload.oldPassword))) {
+      session.flash('error', 'Current password is incorrect.')
+      return response.redirect('/admin/profile')
+    }
+
+    user.password = payload.password
+    await user.save()
+
+    session.flash('success', 'Password updated successfully.')
+    return response.redirect('/admin/profile')
   }
 
   async gameShow({ request, inertia }: HttpContext) {
@@ -547,7 +547,6 @@ export default class AdminPanelController {
         slug: category.slug,
         title: category.translations[0]?.title ?? category.slug,
         status: category.status,
-        isEnabled: category.isEnabled,
         priceAmount: category.priceAmount,
         priceCurrency: category.priceCurrency,
       })),
@@ -733,17 +732,6 @@ export default class AdminPanelController {
     return response.redirect(`/admin/categories/${category.id}`)
   }
 
-  async categoryUpdateAvailability({ request, response, session }: HttpContext) {
-    const payload = await request.validateUsing(adminPanelCategoryAvailabilityValidator)
-    const category = await QuestionCategory.findOrFail(payload.params.id)
-
-    category.isEnabled = payload.isEnabled
-    await category.save()
-
-    session.flash('success', 'Category availability updated.')
-    return response.redirect(`/admin/categories/${category.id}`)
-  }
-
   async questionUpdateStatus({ request, response, session }: HttpContext) {
     const payload = await request.validateUsing(adminPanelPublishStatusValidator)
     const question = await Question.findOrFail(payload.params.id)
@@ -865,7 +853,6 @@ export default class AdminPanelController {
   async categories({ request, inertia }: HttpContext) {
     const filters = await request.validateUsing(adminPanelCategoryListFilterValidator)
     const status = filters.status ?? 'all'
-    const enabled = filters.enabled ?? 'all'
 
     const query = QuestionCategory.query()
       .preload('game', (gameQuery) => {
@@ -884,15 +871,10 @@ export default class AdminPanelController {
       query.where('status', status)
     }
 
-    if (enabled !== 'all') {
-      query.where('is_enabled', enabled === 'yes')
-    }
-
-    const [categories, total, published, enabledCount, paid] = await Promise.all([
+    const [categories, total, published, paid] = await Promise.all([
       query.limit(80),
       QuestionCategory.query().count('* as total').first(),
       QuestionCategory.query().where('status', 'published').count('* as total').first(),
-      QuestionCategory.query().where('is_enabled', true).count('* as total').first(),
       QuestionCategory.query().whereNotNull('price_amount').count('* as total').first(),
     ])
 
@@ -904,7 +886,6 @@ export default class AdminPanelController {
         title: category.translations[0]?.title ?? category.slug,
         gameTitle: category.game.translations[0]?.title ?? category.game.slug,
         status: category.status,
-        isEnabled: category.isEnabled,
         priceAmount: category.priceAmount,
         priceCurrency: category.priceCurrency,
         createdAt: category.createdAt?.toISO() ?? null,
@@ -912,12 +893,10 @@ export default class AdminPanelController {
       filters: {
         gameId: filters.gameId ?? '',
         status,
-        enabled,
       },
       stats: {
         total: this.countValue(total),
         published: this.countValue(published),
-        enabled: this.countValue(enabledCount),
         paid: this.countValue(paid),
       },
       games: await this.gameOptions(),
@@ -957,7 +936,6 @@ export default class AdminPanelController {
         gameId: payload.gameId,
         slug: payload.slug,
         status: payload.status,
-        isEnabled: payload.isEnabled,
         priceAmount: payload.priceAmount ?? null,
         priceCurrency: payload.priceCurrency,
         publishedAt: this.publishedAtFor(payload.status),
@@ -984,7 +962,6 @@ export default class AdminPanelController {
         gameId: payload.gameId,
         slug: payload.slug,
         status: payload.status,
-        isEnabled: payload.isEnabled,
         priceAmount: payload.priceAmount ?? null,
         priceCurrency: payload.priceCurrency,
         publishedAt: this.publishedAtFor(payload.status, category.publishedAt),
@@ -1448,8 +1425,18 @@ export default class AdminPanelController {
     return query
   }
 
-  private async groupReportCount(table: string, column: string, range: AdminPanelDateRange) {
+  private async groupReportCount(
+    table: string,
+    column: string,
+    range: AdminPanelDateRange,
+    where?: Record<string, string>
+  ) {
     const query = db.from(table).select(column).count('* as total').groupBy(column)
+    if (where) {
+      for (const [key, value] of Object.entries(where)) {
+        query.where(key, value)
+      }
+    }
     this.applyReportRange(query, range)
     const rows = await query
 
@@ -1641,7 +1628,6 @@ export default class AdminPanelController {
       status: category.status,
       title: translation?.title ?? '',
       description: translation?.description ?? '',
-      isEnabled: category.isEnabled,
       priceAmount: category.priceAmount,
       priceCurrency: category.priceCurrency,
     }

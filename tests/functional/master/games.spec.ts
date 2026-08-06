@@ -91,7 +91,6 @@ test.group('Master game APIs', (group) => {
       gameId: game.id,
       slug: 'ramadan',
       status: 'published',
-      isEnabled: true,
       priceAmount: '2.000',
       priceCurrency: 'KWD',
       publishedAt: DateTime.utc(),
@@ -100,8 +99,7 @@ test.group('Master game APIs', (group) => {
     const disabled = await QuestionCategory.create({
       gameId: game.id,
       slug: 'disabled-category',
-      status: 'published',
-      isEnabled: false,
+      status: 'archived',
       priceAmount: '2.000',
       priceCurrency: 'KWD',
       publishedAt: DateTime.utc(),

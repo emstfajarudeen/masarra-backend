@@ -1,4 +1,7 @@
 import { AdminLayout, AdminStatusBadge } from '~/components/admin/admin_layout'
+import { Button } from '@/components/ui/button'
+import { DateField } from '@/components/ui/date_field'
+import { Label } from '@/components/ui/label'
 import type React from 'react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 
@@ -81,19 +84,22 @@ const AdminFinance: React.FC<AdminFinanceProps> = ({
   return (
     <AdminLayout
       title="المالية والأرصدة"
-      subtitle="مركز مراجعة المدفوعات وحركة أرصدة الجولات. القراءة فقط حالياً لحماية أرصدة المستخدمين."
     >
       <form className="admin-report-filters" method="get">
-        <div>
-          <label htmlFor="from">From</label>
-          <input id="from" name="from" type="date" defaultValue={filters.from} />
+        <div className="flex items-end gap-3">
+          <div className="space-y-1">
+            <Label htmlFor="from">From</Label>
+            <DateField id="from" name="from" defaultValue={filters.from} placeholder="Pick a date" />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="to">To</Label>
+            <DateField id="to" name="to" defaultValue={filters.to} placeholder="Pick a date" />
+          </div>
+          <Button type="submit">Apply range</Button>
+          <Button variant="ghost" asChild>
+            <a href="/admin/finance">Reset</a>
+          </Button>
         </div>
-        <div>
-          <label htmlFor="to">To</label>
-          <input id="to" name="to" type="date" defaultValue={filters.to} />
-        </div>
-        <button type="submit">Apply range</button>
-        <a href="/admin/finance">Reset</a>
       </form>
 
       <section className="admin-report-hero">

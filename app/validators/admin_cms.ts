@@ -95,7 +95,6 @@ export const upsertAdminQuestionCategoryValidator = vine.compile(
     }),
     slug: slugRule,
     status: vine.enum(['draft', 'published', 'archived']),
-    isEnabled: vine.boolean(),
     priceAmount: vine
       .string()
       .trim()

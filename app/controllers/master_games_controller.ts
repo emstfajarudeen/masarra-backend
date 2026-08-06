@@ -91,7 +91,6 @@ export default class MasterGamesController {
     const categories = await QuestionCategory.query()
       .where('game_id', gameId)
       .where('status', 'published')
-      .where('is_enabled', true)
       .preload('translations', (query) => this.translationQuery(query, locale))
       .orderBy('sort_order', 'asc')
       .orderBy('created_at', 'desc')

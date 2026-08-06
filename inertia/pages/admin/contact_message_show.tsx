@@ -1,5 +1,5 @@
-import { AdminField, AdminFormActions, AdminFormPanel } from '~/components/admin/admin_form'
 import { AdminLayout, AdminStatusBadge } from '~/components/admin/admin_layout'
+import { Button } from '@/components/ui/button'
 import { useForm } from '@inertiajs/react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 import type React from 'react'
@@ -20,15 +20,16 @@ interface ContactMessageShowProps extends Record<string, JSONDataTypes> {
 }
 
 const AdminContactMessageShow: React.FC<ContactMessageShowProps> = ({ message }) => {
-  const form = useForm({ status: message.status })
+  const statusForm = useForm({ status: message.status })
 
-  function submit(event: React.FormEvent) {
-    event.preventDefault()
-    form.patch(`/admin/contact-messages/${message.id}/status`)
+  const updateStatus = (status: ContactMessageDetail['status']) => {
+    if (status === message.status) return
+    statusForm.setData('status', status)
+    statusForm.patch(`/admin/contact-messages/${message.id}/status`, { preserveScroll: true })
   }
 
   return (
-    <AdminLayout title="تفاصيل الرسالة" subtitle="مراجعة رسالة تواصل وتحديث حالتها.">
+    <AdminLayout title="تفاصيل الرسالة">
       <section className="admin-message-detail">
         <div className="admin-message-card">
           <div>
@@ -41,33 +42,40 @@ const AdminContactMessageShow: React.FC<ContactMessageShowProps> = ({ message })
         <div className="admin-message-body">{message.message}</div>
       </section>
 
-      <form className="admin-editor-form" onSubmit={submit}>
-        <AdminFormPanel title="حالة الرسالة" body="استخدم الحالة لتنظيم المتابعة الداخلية.">
-          <AdminField label="الحالة">
-            <select
-              value={form.data.status}
-              onChange={(event) =>
-                form.setData('status', event.target.value as ContactMessageDetail['status'])
-              }
-            >
-              <option value="new">New</option>
-              <option value="reviewed">Reviewed</option>
-              <option value="archived">Archived</option>
-            </select>
-          </AdminField>
-          <AdminField label="IP">
-            <input dir="ltr" value={message.ipAddress ?? '—'} readOnly />
-          </AdminField>
-          <AdminField label="User agent" wide>
-            <input dir="ltr" value={message.userAgent ?? '—'} readOnly />
-          </AdminField>
-        </AdminFormPanel>
-        <AdminFormActions
-          cancelHref="/admin/contact-messages"
-          processing={form.processing}
-          submitLabel="Update status"
-        />
-      </form>
+      <section className="admin-panel">
+        <div className="admin-panel-header">
+          <div>
+            <h2>حالة الرسالة</h2>
+            <p>استخدم الحالة لتنظيم المتابعة الداخلية.</p>
+          </div>
+        </div>
+        <div className="admin-action-grid">
+          <Button
+            type="button"
+            variant={message.status === 'new' ? 'default' : 'outline'}
+            disabled={statusForm.processing}
+            onClick={() => updateStatus('new')}
+          >
+            New
+          </Button>
+          <Button
+            type="button"
+            variant={message.status === 'reviewed' ? 'default' : 'outline'}
+            disabled={statusForm.processing}
+            onClick={() => updateStatus('reviewed')}
+          >
+            Reviewed
+          </Button>
+          <Button
+            type="button"
+            variant={message.status === 'archived' ? 'default' : 'outline'}
+            disabled={statusForm.processing}
+            onClick={() => updateStatus('archived')}
+          >
+            Archived
+          </Button>
+        </div>
+      </section>
     </AdminLayout>
   )
 }

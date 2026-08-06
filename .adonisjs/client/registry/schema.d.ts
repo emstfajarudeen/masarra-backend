@@ -91,16 +91,28 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['finance']>>>
     }
   }
-  'admin_panel.settings': {
+  'admin_panel.profile': {
     methods: ["GET","HEAD"]
-    pattern: '/admin/settings'
+    pattern: '/admin/profile'
     types: {
       body: {}
       paramsTuple: []
       params: {}
       query: {}
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['settings']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['settings']>>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['profile']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['profile']>>>
+    }
+  }
+  'admin_panel.profile_update_password': {
+    methods: ["PATCH"]
+    pattern: '/admin/profile/password'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelPasswordChangeValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelPasswordChangeValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['profileUpdatePassword']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['profileUpdatePassword']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'admin_panel.users': {
@@ -281,18 +293,6 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelPublishStatusValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['categoryUpdateStatus']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['categoryUpdateStatus']>>> | { status: 422; response: { errors: SimpleError[] } }
-    }
-  }
-  'admin_panel.category_update_availability': {
-    methods: ["PATCH"]
-    pattern: '/admin/categories/:id/availability'
-    types: {
-      body: ExtractBody<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelCategoryAvailabilityValidator)>>
-      paramsTuple: [ParamValue]
-      params: { id: ParamValue }
-      query: ExtractQuery<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelCategoryAvailabilityValidator)>>
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['categoryUpdateAvailability']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['categoryUpdateAvailability']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'admin_panel.category_show': {

@@ -25,11 +25,11 @@ declare module '@adonisjs/inertia/types' {
     'admin/game_show': ExtractProps<(typeof import('../../inertia/pages/admin/game_show.tsx'))['default']>
     'admin/games': ExtractProps<(typeof import('../../inertia/pages/admin/games.tsx'))['default']>
     'admin/media_assets': ExtractProps<(typeof import('../../inertia/pages/admin/media_assets.tsx'))['default']>
+    'admin/profile': ExtractProps<(typeof import('../../inertia/pages/admin/profile.tsx'))['default']>
     'admin/question_form': ExtractProps<(typeof import('../../inertia/pages/admin/question_form.tsx'))['default']>
     'admin/question_show': ExtractProps<(typeof import('../../inertia/pages/admin/question_show.tsx'))['default']>
     'admin/questions': ExtractProps<(typeof import('../../inertia/pages/admin/questions.tsx'))['default']>
     'admin/reports': ExtractProps<(typeof import('../../inertia/pages/admin/reports.tsx'))['default']>
-    'admin/settings': ExtractProps<(typeof import('../../inertia/pages/admin/settings.tsx'))['default']>
     'admin/user_show': ExtractProps<(typeof import('../../inertia/pages/admin/user_show.tsx'))['default']>
     'admin/users': ExtractProps<(typeof import('../../inertia/pages/admin/users.tsx'))['default']>
     'auth/login': ExtractProps<(typeof import('../../inertia/pages/auth/login.tsx'))['default']>

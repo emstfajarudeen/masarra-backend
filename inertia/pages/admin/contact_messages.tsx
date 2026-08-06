@@ -1,4 +1,16 @@
 import { AdminEmptyState, AdminLayout, AdminStatusBadge } from '~/components/admin/admin_layout'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { ViewIconLink } from '~/components/admin/table_actions'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { SelectField } from '@/components/ui/select_field'
 import type React from 'react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 
@@ -36,7 +48,7 @@ const AdminContactMessages: React.FC<AdminContactMessagesProps> = ({
   stats,
 }) => {
   return (
-    <AdminLayout title="الرسائل" subtitle="متابعة رسائل التواصل القادمة من الموقع العام.">
+    <AdminLayout title="الرسائل">
       <section className="admin-content-hero">
         <article>
           <span>Total messages</span>
@@ -61,27 +73,20 @@ const AdminContactMessages: React.FC<AdminContactMessagesProps> = ({
       </section>
 
       <section className="admin-panel">
-        <div className="admin-panel-header">
-          <div>
-            <h2>فلاتر الرسائل</h2>
-            <p>فلترة صندوق التواصل حسب الحالة التشغيلية.</p>
-          </div>
-        </div>
-
         <form className="admin-list-filters" method="get" action="/admin/contact-messages">
-          <label>
-            <span>Status</span>
-            <select name="status" defaultValue={filters.status}>
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="space-y-1">
+            <Label>Status</Label>
+            <SelectField
+              name="status"
+              defaultValue={filters.status}
+              options={statusOptions.map((status) => ({ value: status, label: status }))}
+            />
+          </div>
           <div>
-            <button type="submit">Apply filters</button>
-            <a href="/admin/contact-messages">Reset</a>
+            <Button type="submit">Apply filters</Button>
+            <Button variant="ghost" asChild>
+              <a href="/admin/contact-messages">Reset</a>
+            </Button>
           </div>
         </form>
       </section>
@@ -90,7 +95,6 @@ const AdminContactMessages: React.FC<AdminContactMessagesProps> = ({
         <div className="admin-panel-header">
           <div>
             <h2>رسائل التواصل</h2>
-            <p>قائمة مختصرة بأحدث الرسائل مع معاينة للرسالة قبل فتح التفاصيل.</p>
           </div>
         </div>
 
@@ -100,30 +104,38 @@ const AdminContactMessages: React.FC<AdminContactMessagesProps> = ({
             body="غيّر الفلتر الحالي أو انتظر رسائل جديدة من نموذج التواصل."
           />
         ) : (
-          <div className="admin-contact-card-grid">
-            {messages.map((message) => (
-              <article className="admin-contact-card" key={message.id}>
-                <div className="admin-contact-card-head">
-                  <div>
-                    <h3>{message.fullName}</h3>
-                    <p dir="ltr">{message.email}</p>
-                  </div>
-                  <AdminStatusBadge status={message.status} />
-                </div>
-
-                <p>{message.messagePreview}</p>
-
-                <div className="admin-config-footer">
-                  <span>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Message</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {messages.map((message) => (
+                <TableRow key={message.id}>
+                  <TableCell>{message.fullName}</TableCell>
+                  <TableCell dir="ltr">{message.email}</TableCell>
+                  <TableCell>{message.messagePreview}</TableCell>
+                  <TableCell>
+                    <AdminStatusBadge status={message.status} />
+                  </TableCell>
+                  <TableCell>
                     {message.createdAt ? new Date(message.createdAt).toLocaleDateString() : '—'}
-                  </span>
-                  <a className="admin-row-link" href={`/admin/contact-messages/${message.id}`}>
-                    View message
-                  </a>
-                </div>
-              </article>
-            ))}
-          </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="admin-row-actions">
+                      <ViewIconLink href={`/admin/contact-messages/${message.id}`} />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </section>
     </AdminLayout>

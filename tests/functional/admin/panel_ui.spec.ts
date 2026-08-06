@@ -74,7 +74,6 @@ async function createPanelQuestion(game: Game, mediaAsset: MediaAsset) {
     gameId: game.id,
     slug: 'panel-category',
     status: 'published',
-    isEnabled: true,
     priceAmount: '2.000',
     priceCurrency: 'KWD',
     publishedAt: DateTime.utc(),
@@ -300,8 +299,8 @@ test.group('Admin panel UI', (group) => {
     categoryStatus.assertStatus(200)
 
     const categoryAvailability = await client
-      .patch(`/admin/categories/${category.id}/availability`)
-      .form({ isEnabled: false })
+      .patch(`/admin/categories/${category.id}/status`)
+      .form({ status: 'archived' })
       .loginAs(admin)
       .header('Accept', 'text/html')
     categoryAvailability.assertStatus(200)

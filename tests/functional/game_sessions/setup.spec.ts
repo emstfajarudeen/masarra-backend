@@ -55,7 +55,6 @@ async function createCategory(game: Game) {
     gameId: game.id,
     slug: 'ramadan',
     status: 'published',
-    isEnabled: true,
     priceAmount: '2.000',
     priceCurrency: 'KWD',
     publishedAt: DateTime.utc(),

@@ -42,7 +42,6 @@ export function serializeAdminQuestionCategory(category: QuestionCategory) {
     gameId: category.gameId,
     slug: category.slug,
     status: category.status,
-    isEnabled: category.isEnabled,
     priceAmount: category.priceAmount,
     priceCurrency: category.priceCurrency,
     sortOrder: category.sortOrder,

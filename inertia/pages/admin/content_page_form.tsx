@@ -1,5 +1,10 @@
 import { AdminField, AdminFormActions, AdminFormPanel } from '~/components/admin/admin_form'
 import { AdminLayout } from '~/components/admin/admin_layout'
+import { ConfirmDialog } from '~/components/admin/confirm_dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { SelectField } from '@/components/ui/select_field'
+import { Textarea } from '@/components/ui/textarea'
 import { router, usePage } from '@inertiajs/react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 import type { RequestPayload } from '@inertiajs/core'
@@ -31,6 +36,7 @@ const AdminContentPageForm: React.FC<ContentPageFormProps> = ({ mode, page }) =>
   }
   const [data, setData] = useState(initialData)
   const [processing, setProcessing] = useState(false)
+  const [pendingStatus, setPendingStatus] = useState<ContentPageFormData['status'] | null>(null)
 
   function update<K extends keyof ContentPageFormData>(key: K, value: ContentPageFormData[K]) {
     setData((current) => ({ ...current, [key]: value }))
@@ -47,9 +53,10 @@ const AdminContentPageForm: React.FC<ContentPageFormProps> = ({ mode, page }) =>
     }
   }
 
-  function updateStatus(status: ContentPageFormData['status']) {
-    if (!data.id) return
-    if (!window.confirm(`Change this page status to ${status}?`)) return
+  function confirmStatusChange() {
+    if (!data.id || !pendingStatus) return
+    const status = pendingStatus
+    setPendingStatus(null)
     setProcessing(true)
     router.patch(
       `/admin/content-pages/${data.id}/status`,
@@ -61,7 +68,6 @@ const AdminContentPageForm: React.FC<ContentPageFormProps> = ({ mode, page }) =>
   return (
     <AdminLayout
       title={mode === 'edit' ? 'تعديل صفحة' : 'إضافة صفحة'}
-      subtitle="صفحات عامة مثل الشروط والخصوصية والتعريف."
     >
       <form className="admin-editor-form" onSubmit={submit}>
         {mode === 'edit' && data.id ? (
@@ -72,13 +78,23 @@ const AdminContentPageForm: React.FC<ContentPageFormProps> = ({ mode, page }) =>
                 <p>تغيير حالة الصفحة العامة بدون حذف.</p>
               </div>
             </div>
-            <div className="admin-action-grid">
-              <button type="button" disabled={processing} onClick={() => updateStatus('published')}>
+            <div className="flex gap-3 p-4">
+              <Button
+                type="button"
+                variant="default"
+                disabled={processing}
+                onClick={() => setPendingStatus('published')}
+              >
                 Publish
-              </button>
-              <button type="button" disabled={processing} onClick={() => updateStatus('draft')}>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={processing}
+                onClick={() => setPendingStatus('draft')}
+              >
                 Move to draft
-              </button>
+              </Button>
             </div>
           </section>
         ) : null}
@@ -88,35 +104,34 @@ const AdminContentPageForm: React.FC<ContentPageFormProps> = ({ mode, page }) =>
           body="العربية حالياً، والإنجليزية يمكن إضافتها لاحقاً كتوسعة ترجمات."
         >
           <AdminField label="العنوان" error={errors.title}>
-            <input value={data.title} onChange={(event) => update('title', event.target.value)} />
+            <Input value={data.title} onChange={(event) => update('title', event.target.value)} />
           </AdminField>
           <AdminField label="Slug" error={errors.slug}>
-            <input
+            <Input
               dir="ltr"
               value={data.slug}
               onChange={(event) => update('slug', event.target.value)}
             />
           </AdminField>
           <AdminField label="الحالة" error={errors.status}>
-            <select
+            <SelectField
               value={data.status}
-              onChange={(event) =>
-                update('status', event.target.value as ContentPageFormData['status'])
-              }
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
+              onValueChange={(v) => update('status', v as ContentPageFormData['status'])}
+              options={[
+                { value: 'draft', label: 'Draft' },
+                { value: 'published', label: 'Published' },
+              ]}
+            />
           </AdminField>
           <AdminField label="الملخص" wide error={errors.excerpt}>
-            <textarea
+            <Textarea
               value={data.excerpt}
               onChange={(event) => update('excerpt', event.target.value)}
             />
           </AdminField>
           <AdminField label="النص" wide error={errors.body}>
-            <textarea
-              className="admin-textarea-tall"
+            <Textarea
+              className="min-h-[200px]"
               value={data.body}
               onChange={(event) => update('body', event.target.value)}
             />
@@ -128,6 +143,20 @@ const AdminContentPageForm: React.FC<ContentPageFormProps> = ({ mode, page }) =>
           submitLabel="Save page"
         />
       </form>
+
+      <ConfirmDialog
+        open={pendingStatus !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingStatus(null)
+        }}
+        title="تغيير حالة الصفحة"
+        description={
+          pendingStatus ? `هل تريد تغيير حالة هذه الصفحة إلى "${pendingStatus}"؟` : undefined
+        }
+        confirmLabel="تأكيد"
+        cancelLabel="إلغاء"
+        onConfirm={confirmStatusChange}
+      />
     </AdminLayout>
   )
 }

@@ -1,6 +1,9 @@
 import { AdminButtonLink, AdminLayout, AdminStatusBadge } from '~/components/admin/admin_layout'
+import { ConfirmDialog } from '~/components/admin/confirm_dialog'
+import { Button } from '@/components/ui/button'
 import { useForm } from '@inertiajs/react'
 import type React from 'react'
+import { useState } from 'react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 
 interface QuestionDetail extends Record<string, JSONDataTypes> {
@@ -80,17 +83,20 @@ const AdminQuestionShow: React.FC<AdminQuestionShowProps> = ({
   latestRounds,
 }) => {
   const statusForm = useForm({ status: question.status })
+  const [pendingStatus, setPendingStatus] = useState<'draft' | 'published' | 'archived' | null>(
+    null
+  )
 
-  const updateStatus = (status: 'draft' | 'published' | 'archived') => {
-    if (!window.confirm(`Change this question status to ${status}?`)) return
-    statusForm.setData('status', status)
+  const confirmStatusChange = () => {
+    if (!pendingStatus) return
+    statusForm.setData('status', pendingStatus)
     statusForm.patch(`/admin/questions/${question.id}/status`, { preserveScroll: true })
+    setPendingStatus(null)
   }
 
   return (
     <AdminLayout
       title="معاينة السؤال"
-      subtitle="عرض قراءة السؤال كما يحتاجها فريق المحتوى قبل النشر أو التعديل."
       actions={
         <AdminButtonLink href={`/admin/questions/${question.id}/edit`}>
           Edit question
@@ -182,27 +188,30 @@ const AdminQuestionShow: React.FC<AdminQuestionShowProps> = ({
             </div>
           </div>
           <div className="admin-action-grid">
-            <button
+            <Button
               type="button"
+              variant="outline"
               disabled={statusForm.processing}
-              onClick={() => updateStatus('published')}
+              onClick={() => setPendingStatus('published')}
             >
               Publish
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
               disabled={statusForm.processing}
-              onClick={() => updateStatus('draft')}
+              onClick={() => setPendingStatus('draft')}
             >
               Move to draft
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="destructive"
               disabled={statusForm.processing}
-              onClick={() => updateStatus('archived')}
+              onClick={() => setPendingStatus('archived')}
             >
               Archive
-            </button>
+            </Button>
           </div>
         </article>
       </section>
@@ -268,6 +277,19 @@ const AdminQuestionShow: React.FC<AdminQuestionShowProps> = ({
           </table>
         </div>
       </section>
+
+      <ConfirmDialog
+        open={pendingStatus !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingStatus(null)
+        }}
+        title="تغيير حالة السؤال"
+        description={pendingStatus ? `هل تريد تغيير حالة السؤال إلى "${pendingStatus}"؟` : undefined}
+        confirmLabel="تأكيد"
+        cancelLabel="إلغاء"
+        destructive={pendingStatus === 'archived'}
+        onConfirm={confirmStatusChange}
+      />
     </AdminLayout>
   )
 }

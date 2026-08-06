@@ -1,4 +1,7 @@
 import { AdminLayout, AdminStatusBadge } from '~/components/admin/admin_layout'
+import { Button } from '@/components/ui/button'
+import { DateField } from '@/components/ui/date_field'
+import { Label } from '@/components/ui/label'
 import type React from 'react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 
@@ -111,19 +114,22 @@ const AdminReports: React.FC<ReportsProps> = ({
   return (
     <AdminLayout
       title="التقارير التشغيلية"
-      subtitle="قراءة موحدة لأداء الجلسات، المدفوعات، المستخدمين، وحركة الأرصدة."
     >
       <form className="admin-report-filters" method="get">
-        <div>
-          <label htmlFor="from">From</label>
-          <input id="from" name="from" type="date" defaultValue={filters.from} />
+        <div className="flex items-end gap-3">
+          <div className="space-y-1">
+            <Label htmlFor="from">From</Label>
+            <DateField id="from" name="from" defaultValue={filters.from} placeholder="Pick a date" />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="to">To</Label>
+            <DateField id="to" name="to" defaultValue={filters.to} placeholder="Pick a date" />
+          </div>
+          <Button type="submit">Apply range</Button>
+          <Button variant="ghost" asChild>
+            <a href="/admin/reports">Reset</a>
+          </Button>
         </div>
-        <div>
-          <label htmlFor="to">To</label>
-          <input id="to" name="to" type="date" defaultValue={filters.to} />
-        </div>
-        <button type="submit">Apply range</button>
-        <a href="/admin/reports">Reset</a>
       </form>
 
       <section className="admin-report-hero">

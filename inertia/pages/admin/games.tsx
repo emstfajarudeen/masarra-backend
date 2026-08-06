@@ -4,6 +4,18 @@ import {
   AdminLayout,
   AdminStatusBadge,
 } from '~/components/admin/admin_layout'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { EditIconLink, ViewIconLink } from '~/components/admin/table_actions'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { SelectField } from '@/components/ui/select_field'
 import type React from 'react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 
@@ -52,11 +64,7 @@ function formatList(values: number[]) {
 
 const AdminGames: React.FC<AdminGamesProps> = ({ games, filters, stats }) => {
   return (
-    <AdminLayout
-      title="الألعاب"
-      subtitle="إدارة الألعاب وقواعد الإعداد الظاهرة للمستخدمين."
-      actions={<AdminButtonLink href="/admin/games/create">+ Add game</AdminButtonLink>}
-    >
+    <AdminLayout title="الألعاب">
       <section className="admin-config-hero">
         <article>
           <span>Total games</span>
@@ -81,39 +89,30 @@ const AdminGames: React.FC<AdminGamesProps> = ({ games, filters, stats }) => {
       </section>
 
       <section className="admin-panel">
-        <div className="admin-panel-header">
-          <div>
-            <h2>فلاتر الألعاب</h2>
-            <p>فلترة قواعد اللعبة حسب الحالة وتفعيل الأقسام الاختيارية.</p>
-          </div>
-        </div>
-
         <form className="admin-list-filters" method="get" action="/admin/games">
-          <label>
-            <span>Status</span>
-            <select name="status" defaultValue={filters.status}>
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="space-y-1">
+            <Label>Status</Label>
+            <SelectField
+              name="status"
+              defaultValue={filters.status}
+              options={statusOptions.map((status) => ({ value: status, label: status }))}
+            />
+          </div>
 
-          <label>
-            <span>Optional categories</span>
-            <select name="optionalCategories" defaultValue={filters.optionalCategories}>
-              {optionalCategoryOptions.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="space-y-1">
+            <Label>Optional categories</Label>
+            <SelectField
+              name="optionalCategories"
+              defaultValue={filters.optionalCategories}
+              options={optionalCategoryOptions.map(([value, label]) => ({ value, label }))}
+            />
+          </div>
 
           <div>
-            <button type="submit">Apply filters</button>
-            <a href="/admin/games">Reset</a>
+            <Button type="submit">Apply filters</Button>
+            <Button variant="ghost" asChild>
+              <a href="/admin/games">Reset</a>
+            </Button>
           </div>
         </form>
       </section>
@@ -122,8 +121,8 @@ const AdminGames: React.FC<AdminGamesProps> = ({ games, filters, stats }) => {
         <div className="admin-panel-header">
           <div>
             <h2>قائمة الألعاب</h2>
-            <p>كل بطاقة تعرض أهم قواعد الإعداد التي تؤثر على تجربة المستخدم.</p>
           </div>
+          <AdminButtonLink href="/admin/games/create">+ Add game</AdminButtonLink>
         </div>
 
         {games.length === 0 ? (
@@ -132,56 +131,44 @@ const AdminGames: React.FC<AdminGamesProps> = ({ games, filters, stats }) => {
             body="غيّر الفلاتر أو أضف لعبة جديدة من زر الإضافة."
           />
         ) : (
-          <div className="admin-config-card-grid">
-            {games.map((game) => (
-              <article className="admin-config-card" key={game.id}>
-                <div className="admin-config-card-head">
-                  <div>
-                    <h3>{game.title}</h3>
-                    <p dir="ltr">{game.slug}</p>
-                  </div>
-                  <AdminStatusBadge status={game.status} />
-                </div>
-
-                <div className="admin-config-metrics">
-                  <span>
-                    Teams
-                    <strong>
-                      {game.minTeamCount}-{game.maxTeamCount}
-                    </strong>
-                  </span>
-                  <span>
-                    Credit/round
-                    <strong>{game.baseRoundCreditCost}</strong>
-                  </span>
-                  <span>
-                    Rounds
-                    <strong>{formatList(game.allowedRoundCounts)}</strong>
-                  </span>
-                  <span>
-                    Timers
-                    <strong>{formatList(game.allowedQuestionDurations)}s</strong>
-                  </span>
-                </div>
-
-                <div className="admin-config-footer">
-                  <span>
-                    {game.optionalCategoriesEnabled
-                      ? 'Optional packs enabled'
-                      : 'No optional packs'}
-                  </span>
-                  <div className="admin-card-actions">
-                    <a className="admin-row-link" href={`/admin/games/${game.id}`}>
-                      View details
-                    </a>
-                    <a className="admin-row-link" href={`/admin/games/${game.id}/edit`}>
-                      Edit game
-                    </a>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-px" />
+                <TableHead>Title</TableHead>
+                <TableHead>Slug</TableHead>
+                <TableHead>Teams</TableHead>
+                <TableHead>Credit/Round</TableHead>
+                <TableHead>Rounds</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {games.map((game) => (
+                <TableRow key={game.id}>
+                  <TableCell>
+                    <EditIconLink href={`/admin/games/${game.id}/edit`} />
+                  </TableCell>
+                  <TableCell>{game.title}</TableCell>
+                  <TableCell dir="ltr">{game.slug}</TableCell>
+                  <TableCell>
+                    {game.minTeamCount}-{game.maxTeamCount}
+                  </TableCell>
+                  <TableCell>{game.baseRoundCreditCost}</TableCell>
+                  <TableCell>{formatList(game.allowedRoundCounts)}</TableCell>
+                  <TableCell>
+                    <AdminStatusBadge status={game.status} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="admin-row-actions">
+                      <ViewIconLink href={`/admin/games/${game.id}`} />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </section>
     </AdminLayout>

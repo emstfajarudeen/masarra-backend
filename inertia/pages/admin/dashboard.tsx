@@ -40,7 +40,6 @@ const AdminDashboard: React.FC<DashboardProps> = ({ metrics, latestSessions }) =
   return (
     <AdminLayout
       title="لوحة التحكم"
-      subtitle="نظرة تشغيلية سريعة على الألعاب، الجلسات، المدفوعات، والمحتوى."
     >
       <section className="admin-hero-panel">
         <div>

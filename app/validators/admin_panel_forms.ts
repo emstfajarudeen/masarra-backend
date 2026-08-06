@@ -17,6 +17,13 @@ export const adminPanelIdParamsValidator = vine.compile(
   })
 )
 
+export const adminPanelPasswordChangeValidator = vine.compile(
+  vine.object({
+    oldPassword: vine.string().minLength(1).maxLength(128),
+    password: vine.string().minLength(8).maxLength(128).confirmed(),
+  })
+)
+
 export const adminPanelGameFormValidator = vine.compile(
   vine.object({
     params: vine
@@ -50,7 +57,6 @@ export const adminPanelCategoryFormValidator = vine.compile(
     status: vine.enum(['draft', 'published', 'archived']),
     title: vine.string().trim().minLength(2).maxLength(160),
     description: nullableText,
-    isEnabled: vine.boolean(),
     priceAmount: vine
       .string()
       .trim()
@@ -125,15 +131,6 @@ export const adminPanelContentPublishStatusValidator = vine.compile(
   })
 )
 
-export const adminPanelCategoryAvailabilityValidator = vine.compile(
-  vine.object({
-    params: vine.object({
-      id: vine.string().uuid(),
-    }),
-    isEnabled: vine.boolean(),
-  })
-)
-
 export const adminPanelUserStatusValidator = vine.compile(
   vine.object({
     params: vine.object({
@@ -164,7 +161,6 @@ export const adminPanelCategoryListFilterValidator = vine.compile(
     enabled: vine.enum(['all', 'yes', 'no']).optional(),
   })
 )
-
 export const adminPanelContentPageListFilterValidator = vine.compile(
   vine.object({
     status: vine.enum(['all', 'draft', 'published']).optional(),
@@ -179,7 +175,7 @@ export const adminPanelContactMessageListFilterValidator = vine.compile(
 
 export const adminPanelUserListFilterValidator = vine.compile(
   vine.object({
-    role: vine.enum(['all', 'user', 'admin']).optional(),
+    role: vine.enum(['all', 'user']).optional(),
     status: vine.enum(['all', 'active', 'suspended']).optional(),
   })
 )

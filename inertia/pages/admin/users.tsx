@@ -1,4 +1,16 @@
 import { AdminEmptyState, AdminLayout, AdminStatusBadge } from '~/components/admin/admin_layout'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { ViewIconLink } from '~/components/admin/table_actions'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { SelectField } from '@/components/ui/select_field'
 import type React from 'react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 
@@ -28,7 +40,6 @@ interface UserStats extends Record<string, JSONDataTypes> {
   total: number
   active: number
   suspended: number
-  admins: number
 }
 
 export interface AdminUsersProps extends Record<string, JSONDataTypes> {
@@ -37,14 +48,13 @@ export interface AdminUsersProps extends Record<string, JSONDataTypes> {
   stats: UserStats
 }
 
-const roleOptions = ['all', 'user', 'admin'] as const
+const roleOptions = ['all', 'user'] as const
 const statusOptions = ['all', 'active', 'suspended'] as const
 
 const AdminUsers: React.FC<AdminUsersProps> = ({ users, filters, stats }) => {
   return (
     <AdminLayout
       title="المستخدمون"
-      subtitle="مراجعة حسابات المستخدمين، الأرصدة، الجلسات، وسجل الشراء بشكل إداري."
     >
       <section className="admin-user-hero">
         <article>
@@ -62,47 +72,33 @@ const AdminUsers: React.FC<AdminUsersProps> = ({ users, filters, stats }) => {
           <strong>{stats.suspended}</strong>
           <p>حسابات موقوفة</p>
         </article>
-        <article>
-          <span>Admins</span>
-          <strong>{stats.admins}</strong>
-          <p>صلاحيات الإدارة</p>
-        </article>
       </section>
 
       <section className="admin-panel">
-        <div className="admin-panel-header">
-          <div>
-            <h2>فلاتر المستخدمين</h2>
-            <p>فلترة الحسابات حسب الدور وحالة الحساب. هذه المرحلة للعرض فقط.</p>
-          </div>
-        </div>
-
         <form className="admin-list-filters" method="get" action="/admin/users">
-          <label>
-            <span>Role</span>
-            <select name="role" defaultValue={filters.role}>
-              {roleOptions.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="flex items-end gap-3 flex-wrap">
+            <div className="space-y-1">
+              <Label>Role</Label>
+              <SelectField
+                name="role"
+                defaultValue={filters.role}
+                options={roleOptions.map((role) => ({ value: role, label: role }))}
+              />
+            </div>
 
-          <label>
-            <span>Status</span>
-            <select name="status" defaultValue={filters.status}>
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </label>
+            <div className="space-y-1">
+              <Label>Status</Label>
+              <SelectField
+                name="status"
+                defaultValue={filters.status}
+                options={statusOptions.map((status) => ({ value: status, label: status }))}
+              />
+            </div>
 
-          <div>
-            <button type="submit">Apply filters</button>
-            <a href="/admin/users">Reset</a>
+            <Button type="submit">Apply filters</Button>
+            <Button variant="ghost" asChild>
+              <a href="/admin/users">Reset</a>
+            </Button>
           </div>
         </form>
       </section>
@@ -111,7 +107,6 @@ const AdminUsers: React.FC<AdminUsersProps> = ({ users, filters, stats }) => {
         <div className="admin-panel-header">
           <div>
             <h2>قائمة المستخدمين</h2>
-            <p>ملخص سريع لكل مستخدم: الحساب، الرصيد، الجلسات، والمشتريات المؤكدة.</p>
           </div>
         </div>
 
@@ -121,56 +116,44 @@ const AdminUsers: React.FC<AdminUsersProps> = ({ users, filters, stats }) => {
             body="غيّر الفلاتر الحالية أو انتظر تسجيل مستخدمين جدد."
           />
         ) : (
-          <div className="admin-user-card-grid">
-            {users.map((user) => (
-              <article className="admin-user-card" key={user.id}>
-                <div className="admin-user-card-head">
-                  <div className="admin-user-avatar">{user.initials}</div>
-                  <div>
-                    <h3>{user.fullName}</h3>
-                    <p dir="ltr">{user.email}</p>
-                    <p dir="ltr">{user.phoneNumber}</p>
-                  </div>
-                  <AdminStatusBadge status={user.status} />
-                </div>
-
-                <div className="admin-user-flags">
-                  <span>{user.role}</span>
-                  <span>{user.preferredLocale.toUpperCase()}</span>
-                  <span>{user.phoneVerified ? 'Phone verified' : 'Phone not verified'}</span>
-                  <span>{user.emailVerified ? 'Email verified' : 'Email not verified'}</span>
-                </div>
-
-                <div className="admin-config-metrics">
-                  <span>
-                    Credit balance
-                    <strong>{user.creditBalance}</strong>
-                  </span>
-                  <span>
-                    Game sessions
-                    <strong>{user.gameSessionCount}</strong>
-                  </span>
-                  <span>
-                    Paid purchases
-                    <strong>{user.purchaseCount}</strong>
-                  </span>
-                  <span>
-                    Joined
-                    <strong>
-                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
-                    </strong>
-                  </span>
-                </div>
-
-                <div className="admin-config-footer">
-                  <span>Read-only profile</span>
-                  <a className="admin-row-link" href={`/admin/users/${user.id}`}>
-                    View profile
-                  </a>
-                </div>
-              </article>
-            ))}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Balance</TableHead>
+                <TableHead>Sessions</TableHead>
+                <TableHead>Joined</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>{user.fullName}</TableCell>
+                  <TableCell dir="ltr">{user.email}</TableCell>
+                  <TableCell dir="ltr">{user.phoneNumber}</TableCell>
+                  <TableCell>
+                    <AdminStatusBadge status={user.status} />
+                  </TableCell>
+                  <TableCell>{user.role}</TableCell>
+                  <TableCell>{user.creditBalance}</TableCell>
+                  <TableCell>{user.gameSessionCount}</TableCell>
+                  <TableCell>
+                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="admin-row-actions">
+                      <ViewIconLink href={`/admin/users/${user.id}`} />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </section>
     </AdminLayout>

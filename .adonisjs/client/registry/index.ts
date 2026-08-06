@@ -48,11 +48,17 @@ const routes = {
     tokens: [{"old":"/admin/finance","type":0,"val":"admin","end":""},{"old":"/admin/finance","type":0,"val":"finance","end":""}],
     types: placeholder as Registry['admin_panel.finance']['types'],
   },
-  'admin_panel.settings': {
+  'admin_panel.profile': {
     methods: ["GET","HEAD"],
-    pattern: '/admin/settings',
-    tokens: [{"old":"/admin/settings","type":0,"val":"admin","end":""},{"old":"/admin/settings","type":0,"val":"settings","end":""}],
-    types: placeholder as Registry['admin_panel.settings']['types'],
+    pattern: '/admin/profile',
+    tokens: [{"old":"/admin/profile","type":0,"val":"admin","end":""},{"old":"/admin/profile","type":0,"val":"profile","end":""}],
+    types: placeholder as Registry['admin_panel.profile']['types'],
+  },
+  'admin_panel.profile_update_password': {
+    methods: ["PATCH"],
+    pattern: '/admin/profile/password',
+    tokens: [{"old":"/admin/profile/password","type":0,"val":"admin","end":""},{"old":"/admin/profile/password","type":0,"val":"profile","end":""},{"old":"/admin/profile/password","type":0,"val":"password","end":""}],
+    types: placeholder as Registry['admin_panel.profile_update_password']['types'],
   },
   'admin_panel.users': {
     methods: ["GET","HEAD"],
@@ -143,12 +149,6 @@ const routes = {
     pattern: '/admin/categories/:id/status',
     tokens: [{"old":"/admin/categories/:id/status","type":0,"val":"admin","end":""},{"old":"/admin/categories/:id/status","type":0,"val":"categories","end":""},{"old":"/admin/categories/:id/status","type":1,"val":"id","end":""},{"old":"/admin/categories/:id/status","type":0,"val":"status","end":""}],
     types: placeholder as Registry['admin_panel.category_update_status']['types'],
-  },
-  'admin_panel.category_update_availability': {
-    methods: ["PATCH"],
-    pattern: '/admin/categories/:id/availability',
-    tokens: [{"old":"/admin/categories/:id/availability","type":0,"val":"admin","end":""},{"old":"/admin/categories/:id/availability","type":0,"val":"categories","end":""},{"old":"/admin/categories/:id/availability","type":1,"val":"id","end":""},{"old":"/admin/categories/:id/availability","type":0,"val":"availability","end":""}],
-    types: placeholder as Registry['admin_panel.category_update_availability']['types'],
   },
   'admin_panel.category_show': {
     methods: ["GET","HEAD"],
