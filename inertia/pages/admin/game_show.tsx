@@ -288,7 +288,9 @@ const AdminGameShow: React.FC<AdminGameShowProps> = ({
           if (!open) setPendingStatus(null)
         }}
         title="تغيير حالة اللعبة"
-        description={pendingStatus ? `هل تريد تغيير حالة اللعبة إلى "${pendingStatus}"؟` : undefined}
+        description={
+          pendingStatus ? `هل تريد تغيير حالة اللعبة إلى "${pendingStatus}"؟` : undefined
+        }
         confirmLabel="تأكيد"
         cancelLabel="إلغاء"
         destructive={pendingStatus === 'archived'}

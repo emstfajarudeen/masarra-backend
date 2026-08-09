@@ -339,3 +339,41 @@
 - [x] Status=published is now the single source of truth for category visibility.
 - [x] Run typecheck and production build.
 - [ ] Run full test suite after local PostgreSQL role `masarra` is available.
+
+## Step 30 — Admin Filter Sections UI Redesign (Arabic)
+
+- [x] Redesigned the filter forms on all admin list pages (questions, games, categories, content pages, contact messages, and users) into clean responsive grid cards.
+- [x] Added explicit Arabic titles, field labels, and select option names, removing all English text.
+- [x] Translated all table headers and stats titles to Arabic across these pages.
+- [x] Resolved pre-existing and related typescript warning/error issues in tsconfig, calendar, and unused variables.
+- [x] Ran formatting, linting, typechecking, and verified production build success.
+
+## Step 30 — Admin Subscription Plans
+
+- [x] Add `subscription_plans` + `subscription_plan_translations` tables and models.
+- [x] Add bilingual-ready admin CRUD (list, create, edit, status) mirroring games/categories.
+- [x] Add VineJS validator and admin routes under `/admin/subscriptions`.
+- [x] Add sidebar navigation entry.
+- [x] Add list, create/edit form, and read-only show pages.
+- [x] Store `rounds_granted` so a future purchase phase can credit the wallet via a `grant` transaction.
+- [x] Use a Quill rich-text editor for plan advantages and add a live preview card in the form.
+- [x] Add a delete action (row overflow menu + confirmation dialog) with a hard-delete backend route.
+- [x] Add admin subscription CRUD functional test.
+- [x] Run typecheck and production build.
+- [ ] Wire user-facing purchase/checkout that credits the wallet (next phase).
+- [ ] Run full test suite after local PostgreSQL role `masarra` is available.
+
+## Step 31 — Dynamic Fun Rules & Question Rule Snapshotting
+
+- [x] Add `fun_rules` migration `1785348816840_create_fun_rules_table.ts` and `FunRule` model.
+- [x] Seed default fun rules (`normal`, `steal`, `transfer`, `freeze`, `double`) in development seeder.
+- [x] Add VineJS validation schemas for Fun Rules management.
+- [x] Register admin routes under `/admin/fun-rules` (list, create, store, edit, update, toggle status).
+- [x] Add sidebar navigation entry "قواعد التأثير" in admin layout.
+- [x] Create Inertia React list page `inertia/pages/admin/fun_rules.tsx` and form page `inertia/pages/admin/fun_rule_form.tsx`.
+- [x] Update Question Form (`inertia/pages/admin/question_form.tsx`) to dynamically load active fun rules options from server.
+- [x] Implement Rule Snapshotting: When creating or updating a question, freeze and snapshot full rule attributes into `question.metadata.funRule`.
+- [x] Update Question detail page (`inertia/pages/admin/question_show.tsx`) to display snapshotted rule details.
+- [x] Add functional tests in `tests/functional/admin/fun_rules.spec.ts` verifying CRUD operations and snapshot retention when master rule definition changes.
+- [x] Run formatting, linting, and typechecking.
+

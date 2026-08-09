@@ -82,14 +82,17 @@ const AdminFinance: React.FC<AdminFinanceProps> = ({
   creditTransactions,
 }) => {
   return (
-    <AdminLayout
-      title="المالية والأرصدة"
-    >
+    <AdminLayout title="المالية والأرصدة">
       <form className="admin-report-filters" method="get">
         <div className="flex items-end gap-3">
           <div className="space-y-1">
             <Label htmlFor="from">From</Label>
-            <DateField id="from" name="from" defaultValue={filters.from} placeholder="Pick a date" />
+            <DateField
+              id="from"
+              name="from"
+              defaultValue={filters.from}
+              placeholder="Pick a date"
+            />
           </div>
           <div className="space-y-1">
             <Label htmlFor="to">To</Label>

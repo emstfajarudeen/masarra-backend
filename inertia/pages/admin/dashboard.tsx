@@ -38,9 +38,7 @@ const metricCards = [
 
 const AdminDashboard: React.FC<DashboardProps> = ({ metrics, latestSessions }) => {
   return (
-    <AdminLayout
-      title="لوحة التحكم"
-    >
+    <AdminLayout title="لوحة التحكم">
       <section className="admin-hero-panel">
         <div>
           <span className="admin-kicker">Revenue</span>

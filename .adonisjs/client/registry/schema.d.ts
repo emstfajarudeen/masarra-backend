@@ -307,6 +307,102 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['categoryShow']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'admin_panel.subscriptions': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/subscriptions'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelSubscriptionListFilterValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptions']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptions']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin_panel.subscription_create': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/subscriptions/create'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionCreate']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionCreate']>>>
+    }
+  }
+  'admin_panel.subscription_store': {
+    methods: ["POST"]
+    pattern: '/admin/subscriptions'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelSubscriptionFormValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelSubscriptionFormValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionStore']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionStore']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin_panel.subscription_edit': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/subscriptions/:id/edit'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelIdParamsValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionEdit']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionEdit']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin_panel.subscription_update': {
+    methods: ["PUT"]
+    pattern: '/admin/subscriptions/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelSubscriptionFormValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelSubscriptionFormValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionUpdate']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionUpdate']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin_panel.subscription_update_status': {
+    methods: ["PATCH"]
+    pattern: '/admin/subscriptions/:id/status'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelPublishStatusValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelPublishStatusValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionUpdateStatus']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionUpdateStatus']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin_panel.subscription_destroy': {
+    methods: ["DELETE"]
+    pattern: '/admin/subscriptions/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelIdParamsValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelIdParamsValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionDestroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionDestroy']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin_panel.subscription_show': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/subscriptions/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelIdParamsValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionShow']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['subscriptionShow']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'admin_panel.questions': {
     methods: ["GET","HEAD"]
     pattern: '/admin/questions'
@@ -389,6 +485,78 @@ export interface Registry {
       query: ExtractQueryForGet<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelIdParamsValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['questionShow']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['questionShow']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin_panel.fun_rules': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/fun-rules'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/admin_fun_rules').adminFunRuleListFilterValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['funRules']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['funRules']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin_panel.fun_rule_create': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/fun-rules/create'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['funRuleCreate']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['funRuleCreate']>>>
+    }
+  }
+  'admin_panel.fun_rule_store': {
+    methods: ["POST"]
+    pattern: '/admin/fun-rules'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/admin_fun_rules').adminFunRuleFormValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/admin_fun_rules').adminFunRuleFormValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['funRuleStore']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['funRuleStore']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin_panel.fun_rule_edit': {
+    methods: ["GET","HEAD"]
+    pattern: '/admin/fun-rules/:id/edit'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelIdParamsValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['funRuleEdit']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['funRuleEdit']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin_panel.fun_rule_update': {
+    methods: ["PUT"]
+    pattern: '/admin/fun-rules/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/admin_fun_rules').adminFunRuleFormValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/admin_fun_rules').adminFunRuleFormValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['funRuleUpdate']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['funRuleUpdate']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'admin_panel.fun_rule_update_status': {
+    methods: ["PATCH"]
+    pattern: '/admin/fun-rules/:id/status'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelIdParamsValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/admin_panel_forms').adminPanelIdParamsValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['funRuleUpdateStatus']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/admin/panel_controller').default['funRuleUpdateStatus']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'admin_panel.media_assets': {

@@ -67,6 +67,37 @@ export const adminPanelCategoryFormValidator = vine.compile(
   })
 )
 
+export const adminPanelSubscriptionFormValidator = vine.compile(
+  vine.object({
+    params: vine
+      .object({
+        id: vine.string().uuid().optional(),
+      })
+      .optional(),
+    slug: slugRule,
+    status: vine.enum(['draft', 'published', 'archived']),
+    title: vine.string().trim().minLength(2).maxLength(160),
+    priceAmount: vine
+      .string()
+      .trim()
+      .regex(/^\d{1,7}(\.\d{1,3})?$/),
+    roundsGranted: vine.number().withoutDecimals().min(0),
+    maxTeams: vine.number().withoutDecimals().range([1, 12]),
+    isFeatured: vine.boolean(),
+    badgeLabel: vine.string().trim().maxLength(60).nullable().optional(),
+    ctaLabel: vine.string().trim().maxLength(60).nullable().optional(),
+    note: vine.string().trim().maxLength(280).nullable().optional(),
+    advantages: vine.string().trim().maxLength(8000).nullable().optional(),
+    sortOrder: vine.number().withoutDecimals().min(0).optional(),
+  })
+)
+
+export const adminPanelSubscriptionListFilterValidator = vine.compile(
+  vine.object({
+    status: vine.enum(['all', 'draft', 'published', 'archived']).optional(),
+  })
+)
+
 export const adminPanelQuestionFormValidator = vine.compile(
   vine.object({
     params: vine
@@ -79,13 +110,18 @@ export const adminPanelQuestionFormValidator = vine.compile(
     status: vine.enum(['draft', 'published', 'archived']),
     type: vine.enum(['knowledge', 'challenge']),
     contentMode: vine.enum(['text', 'image', 'video', 'audio']),
-    effectLogic: vine.enum(['normal', 'steal', 'transfer', 'freeze', 'double']),
+    funRuleId: vine.string().trim().nullable().optional(),
+    effectLogic: vine.string().trim().optional(),
+    effectPoints: vine.number().withoutDecimals().range([1, 100]).nullable().optional(),
     mediaAssetId: vine.string().uuid().nullable().optional(),
     mediaUrl: vine.string().trim().maxLength(1000).nullable().optional(),
     prompt: vine.string().trim().minLength(2).maxLength(4000),
     correctAnswer: vine.string().trim().maxLength(2000).nullable().optional(),
     explanation: vine.string().trim().maxLength(4000).nullable().optional(),
     basePoints: vine.number().withoutDecimals().range([1, 100]),
+    sortOrder: vine.number().withoutDecimals().min(0).optional(),
+    visibilityTimerEnabled: vine.boolean().optional(),
+    visibilityTimerSeconds: vine.number().withoutDecimals().range([1, 300]).nullable().optional(),
   })
 )
 

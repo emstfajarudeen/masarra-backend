@@ -123,27 +123,3 @@ export function AdminFormActions({
     </div>
   )
 }
-
-export function AdminMediaPlaceholder({
-  mode,
-  mediaUrl,
-}: {
-  mode: 'image' | 'video' | 'audio'
-  mediaUrl: string
-}) {
-  return (
-    <div className="flex items-start gap-3 rounded-lg border border-dashed border-input p-4 mt-2">
-      <div className="text-2xl">{mode === 'image' ? '🖼️' : mode === 'video' ? '▶️' : '🎧'}</div>
-      <div>
-        <strong className="text-sm">
-          {mediaUrl ? 'Media URL attached' : `No ${mode} file attached yet`}
-        </strong>
-        <p className="text-xs text-muted-foreground mt-1">
-          {mediaUrl
-            ? mediaUrl
-            : 'Upload a local media file. The saved question will keep a storage-neutral media asset reference.'}
-        </p>
-      </div>
-    </div>
-  )
-}

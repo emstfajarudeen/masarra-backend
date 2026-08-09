@@ -60,9 +60,7 @@ const AdminCategoryForm: React.FC<CategoryFormProps> = ({ mode, category, games 
   }
 
   return (
-    <AdminLayout
-      title={mode === 'edit' ? 'تعديل قسم' : 'إضافة قسم'}
-    >
+    <AdminLayout title={mode === 'edit' ? 'تعديل قسم' : 'إضافة قسم'}>
       <form className="admin-editor-form" onSubmit={submit}>
         <AdminFormPanel
           title="بيانات القسم"

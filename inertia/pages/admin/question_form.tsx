@@ -2,12 +2,10 @@ import {
   AdminField,
   AdminFormActions,
   AdminFormPanel,
-  AdminFormNotice,
-  AdminMediaPlaceholder,
   AdminSegmentedChoice,
 } from '~/components/admin/admin_form'
 import { AdminLayout } from '~/components/admin/admin_layout'
-import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { SelectField } from '@/components/ui/select_field'
 import { Textarea } from '@/components/ui/textarea'
@@ -44,20 +42,36 @@ interface QuestionFormData extends Record<string, JSONDataTypes> {
   type: 'knowledge' | 'challenge'
   contentMode: 'text' | 'image' | 'video' | 'audio'
   effectLogic: 'normal' | 'steal' | 'transfer' | 'freeze' | 'double'
+  effectPoints: number | null
   mediaAssetId: string | null
   mediaUrl: string
   prompt: string
   correctAnswer: string
   explanation: string
   basePoints: number
+  sortOrder: number
+  visibilityTimerEnabled: boolean
+  visibilityTimerSeconds: number | null
+}
+
+export interface FunRuleOption extends Record<string, JSONDataTypes> {
+  id: string
+  code: string
+  nameAr: string
+  nameEn: string | null
+  descriptionAr: string | null
+  descriptionEn: string | null
+  effectType: string
+  config: Record<string, JSONDataTypes>
 }
 
 interface QuestionFormProps extends Record<string, JSONDataTypes> {
   mode: 'create' | 'edit'
-  question: QuestionFormData | null
+  question: (QuestionFormData & { funRuleId?: string | null }) | null
   games: GameOption[]
   categories: CategoryOption[]
   mediaAssets: MediaAssetOption[]
+  funRules?: FunRuleOption[]
 }
 
 const contentModes = [
@@ -67,7 +81,7 @@ const contentModes = [
   { value: 'audio', label: 'Audio', caption: 'صوت' },
 ] as const
 
-const effectLogics = [
+const defaultEffectLogics = [
   { value: 'normal', label: 'Normal', caption: 'نقاط عادية' },
   { value: 'steal', label: 'Steal', caption: 'خصم 3 نقاط' },
   { value: 'transfer', label: 'Transfer', caption: 'تحويل' },
@@ -75,18 +89,191 @@ const effectLogics = [
   { value: 'double', label: 'Double', caption: 'مضاعفة' },
 ] as const
 
+function MediaPreviewChip({
+  url,
+  contentMode,
+  onClear,
+}: {
+  url: string
+  contentMode: string
+  onClear: () => void
+}) {
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const icon = contentMode === 'image' ? '🖼️' : contentMode === 'video' ? '▶️' : '🎧'
+  const label = url.split('/').pop() ?? url
+
+  return (
+    <>
+      <div className="admin-media-chip">
+        <span className="admin-media-chip-icon">{icon}</span>
+        <span className="admin-media-chip-name" title={url}>
+          {label}
+        </span>
+        <button
+          type="button"
+          className="admin-media-chip-preview"
+          onClick={() => setPreviewOpen(true)}
+          aria-label="معاينة"
+        >
+          معاينة
+        </button>
+        <button
+          type="button"
+          className="admin-media-chip-remove"
+          onClick={onClear}
+          aria-label="إزالة"
+        >
+          ✕
+        </button>
+      </div>
+
+      {previewOpen ? (
+        <div className="admin-media-modal-overlay" onClick={() => setPreviewOpen(false)}>
+          <div
+            className="admin-media-modal admin-media-preview-modal"
+            dir="rtl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="admin-media-modal-header">
+              <h3>{label}</h3>
+              <button
+                type="button"
+                className="admin-media-modal-close"
+                onClick={() => setPreviewOpen(false)}
+                aria-label="إغلاق"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="admin-media-preview-body">
+              {contentMode === 'image' && (
+                <img src={url} alt="preview" className="admin-media-preview-full" />
+              )}
+              {contentMode === 'video' && (
+                <video src={url} controls className="admin-media-preview-full" />
+              )}
+              {contentMode === 'audio' && (
+                <audio src={url} controls className="admin-media-preview-audio-full" />
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
+  )
+}
+
+function GalleryPicker({
+  assets,
+  selectedId,
+  contentMode,
+  onSelect,
+}: {
+  assets: MediaAssetOption[]
+  selectedId: string | null
+  contentMode: string
+  onSelect: (asset: MediaAssetOption) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+
+  const visible = query.trim()
+    ? assets.filter((a) => a.originalName.toLowerCase().includes(query.toLowerCase()))
+    : assets
+
+  function pick(asset: MediaAssetOption) {
+    onSelect(asset)
+    setOpen(false)
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        className="admin-media-library-btn"
+        onClick={() => {
+          setQuery('')
+          setOpen(true)
+        }}
+      >
+        اختر من المكتبة
+        <span className="admin-media-library-count">{assets.length}</span>
+      </button>
+
+      {open ? (
+        <div className="admin-media-modal-overlay" onClick={() => setOpen(false)}>
+          <div className="admin-media-modal" dir="rtl" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-media-modal-header">
+              <h3>مكتبة الوسائط — {contentMode}</h3>
+              <button
+                type="button"
+                className="admin-media-modal-close"
+                onClick={() => setOpen(false)}
+                aria-label="إغلاق"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="admin-media-modal-search">
+              <input
+                type="search"
+                className="admin-media-gallery-search"
+                placeholder="ابحث باسم الملف…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                autoFocus
+              />
+            </div>
+
+            <div className="admin-media-modal-grid">
+              {visible.length === 0 ? (
+                <span className="admin-media-gallery-empty">لا توجد نتائج مطابقة.</span>
+              ) : (
+                visible.map((asset) => (
+                  <button
+                    key={asset.id}
+                    type="button"
+                    className="admin-media-asset"
+                    data-selected={selectedId === asset.id}
+                    onClick={() => pick(asset)}
+                  >
+                    <strong title={asset.originalName}>{asset.originalName}</strong>
+                    <small dir="ltr">{asset.mimeType}</small>
+                  </button>
+                ))
+              )}
+            </div>
+
+            <div className="admin-media-modal-footer">
+              <button
+                type="button"
+                className="admin-media-modal-cancel"
+                onClick={() => setOpen(false)}
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
+  )
+}
+
 const AdminQuestionForm: React.FC<QuestionFormProps> = ({
   mode,
   question,
   games,
   categories,
   mediaAssets: initialMediaAssets,
+  funRules = [],
 }) => {
   const { csrfToken, errors } = usePage().props as {
     csrfToken?: string
     errors: Record<string, string | undefined>
   }
-  const initialData: QuestionFormData = question ?? {
+  const initialData: QuestionFormData & { funRuleId?: string | null } = question ?? {
     id: null,
     gameId: games[0]?.id ?? '',
     questionCategoryId: null,
@@ -94,12 +281,17 @@ const AdminQuestionForm: React.FC<QuestionFormProps> = ({
     type: 'knowledge',
     contentMode: 'text',
     effectLogic: 'normal',
+    effectPoints: null,
+    funRuleId: null,
     mediaAssetId: null,
     mediaUrl: '',
     prompt: '',
     correctAnswer: '',
     explanation: '',
     basePoints: 5,
+    sortOrder: 0,
+    visibilityTimerEnabled: false,
+    visibilityTimerSeconds: null,
   }
   const [data, setData] = useState(initialData)
   const [processing, setProcessing] = useState(false)
@@ -178,18 +370,12 @@ const AdminQuestionForm: React.FC<QuestionFormProps> = ({
   }
 
   return (
-    <AdminLayout
-      title={mode === 'edit' ? 'تعديل سؤال' : 'إضافة سؤال'}
-    >
+    <AdminLayout title={mode === 'edit' ? 'تعديل سؤال' : 'إضافة سؤال'}>
       <form className="admin-editor-form" onSubmit={submit}>
         <AdminFormPanel
-          title="نوع السؤال"
-          body="اختر طريقة عرض السؤال. هذه ليست نسخة من المرجع، لكنها نفس منطق التقسيم."
+          title="محتوى السؤال"
+          body="المحتوى العربي الحالي. يمكن إضافة الإنجليزية لاحقاً بنفس نموذج الترجمات."
         >
-          <AdminFormNotice
-            title="Media storage"
-            body="الملفات تحفظ حالياً في التخزين المحلي. الربط يتم عبر media asset ID حتى يمكن تبديل التخزين إلى S3 لاحقاً بدون تغيير نموذج السؤال."
-          />
           <div className="is-wide">
             <AdminSegmentedChoice
               label="Question content"
@@ -198,73 +384,100 @@ const AdminQuestionForm: React.FC<QuestionFormProps> = ({
               onChange={(value) => update('contentMode', value)}
             />
           </div>
+          <AdminField
+            label="مؤقت ظهور العنصر"
+            wide
+            error={errors.visibilityTimerSeconds}
+            help="يتحكم في مدة ظهور هذا العنصر (نص، صورة، إلخ) فقط. لا يغيّر وقت السؤال الإجمالي المحدد في إعدادات اللعبة."
+          >
+            <div className="admin-visibility-timer-card" data-active={data.visibilityTimerEnabled}>
+              <div className="admin-visibility-timer-toggle">
+                <Checkbox
+                  checked={data.visibilityTimerEnabled}
+                  onChange={(event) => {
+                    const enabled = event.target.checked
+                    update('visibilityTimerEnabled', enabled)
+                    if (enabled && !data.visibilityTimerSeconds) {
+                      update('visibilityTimerSeconds', 10)
+                    }
+                  }}
+                  label="تفعيل مؤقت ظهور العنصر"
+                />
+              </div>
+              {data.visibilityTimerEnabled ? (
+                <div className="admin-visibility-timer-input-group">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="300"
+                    value={data.visibilityTimerSeconds ?? ''}
+                    onChange={(event) =>
+                      update(
+                        'visibilityTimerSeconds',
+                        event.target.value === '' ? null : Number(event.target.value)
+                      )
+                    }
+                  />
+                  <span>ثانية</span>
+                </div>
+              ) : null}
+            </div>
+          </AdminField>
           {data.contentMode !== 'text' ? (
             <AdminField
               label="ملف الوسائط"
               wide
               error={errors.mediaAssetId ?? errors.mediaUrl ?? uploadError ?? undefined}
-              help="الصيغ المدعومة: صور، فيديو، وصوت. الحد الحالي 50MB."
             >
-              <Input
-                type="file"
-                accept={`${data.contentMode}/*`}
-                disabled={uploading || processing}
-                onChange={(event) => {
-                  const file = event.target.files?.[0]
-                  if (file) void uploadMedia(file)
-                }}
-              />
-              <Input
-                dir="ltr"
-                placeholder="Stored media URL"
-                className="mt-2"
-                value={data.mediaUrl}
-                onChange={(event) => update('mediaUrl', event.target.value)}
-              />
-              {data.mediaAssetId ? (
-                <p className="text-xs text-muted-foreground mt-1" dir="ltr">
-                  Media asset: {data.mediaAssetId}
-                </p>
-              ) : uploading ? (
-                <p className="text-xs text-muted-foreground mt-1">Uploading media…</p>
-              ) : null}
-              <AdminMediaPlaceholder mode={data.contentMode} mediaUrl={data.mediaUrl} />
-              {compatibleMediaAssets.length > 0 ? (
-                <div className="mt-3 space-y-2">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Choose existing {data.contentMode}
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {compatibleMediaAssets.map((asset) => (
-                      <Button
-                        key={asset.id}
-                        type="button"
-                        variant={data.mediaAssetId === asset.id ? 'default' : 'outline'}
-                        size="sm"
-                        className="flex flex-col h-auto py-2 px-3"
-                        onClick={() => selectMediaAsset(asset)}
-                      >
-                        <strong className="text-xs">{asset.originalName}</strong>
-                        <small className="text-[10px] opacity-70" dir="ltr">
-                          {asset.mimeType}
-                        </small>
-                      </Button>
-                    ))}
+              <div className="admin-media-manager">
+                {data.mediaUrl ? (
+                  <div className="admin-media-current">
+                    <MediaPreviewChip
+                      url={data.mediaUrl}
+                      contentMode={data.contentMode}
+                      onClear={() => {
+                        update('mediaAssetId', null)
+                        update('mediaUrl', '')
+                      }}
+                    />
                   </div>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground mt-2">
-                  No reusable {data.contentMode} assets yet.
-                </p>
-              )}
+                ) : (
+                  <label className="admin-media-dropzone" data-disabled={uploading || processing}>
+                    <input
+                      type="file"
+                      accept={`${data.contentMode}/*`}
+                      disabled={uploading || processing}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0]
+                        if (file) void uploadMedia(file)
+                      }}
+                    />
+                    <span className="admin-media-dropzone-icon">
+                      {data.contentMode === 'image'
+                        ? '🖼️'
+                        : data.contentMode === 'video'
+                          ? '▶️'
+                          : '🎧'}
+                    </span>
+                    <span className="admin-media-dropzone-text">
+                      <strong>{uploading ? 'جاري الرفع…' : 'اختر ملف للرفع'}</strong>
+                      <small>الصيغ المدعومة: صور، فيديو، وصوت — الحد الحالي 50MB.</small>
+                    </span>
+                  </label>
+                )}
+
+                {compatibleMediaAssets.length > 0 ? (
+                  <GalleryPicker
+                    assets={compatibleMediaAssets}
+                    selectedId={data.mediaAssetId}
+                    contentMode={data.contentMode}
+                    onSelect={selectMediaAsset}
+                  />
+                ) : null}
+              </div>
             </AdminField>
           ) : null}
-        </AdminFormPanel>
 
-        <AdminFormPanel
-          title="محتوى السؤال"
-          body="المحتوى العربي الحالي. يمكن إضافة الإنجليزية لاحقاً بنفس نموذج الترجمات."
-        >
           <AdminField
             label="اللعبة"
             error={errors.gameId}
@@ -328,6 +541,20 @@ const AdminQuestionForm: React.FC<QuestionFormProps> = ({
               onChange={(event) => update('basePoints', Number(event.target.value))}
             />
           </AdminField>
+          <AdminField
+            label="ترتيب الظهور"
+            error={errors.sortOrder}
+            help="الأرقام الأصغر تظهر أولاً في قائمة الأسئلة."
+          >
+            <Input
+              type="number"
+              min="0"
+              value={data.sortOrder}
+              onChange={(event) =>
+                update('sortOrder', event.target.value === '' ? 0 : Number(event.target.value))
+              }
+            />
+          </AdminField>
           <AdminField label="شرح الإجابة" wide error={errors.explanation}>
             <Textarea
               value={data.explanation}
@@ -337,17 +564,63 @@ const AdminQuestionForm: React.FC<QuestionFormProps> = ({
         </AdminFormPanel>
 
         <AdminFormPanel
-          title="منطق التأثير"
-          body="القواعد غير المستقرة مثل transfer/freeze تحفظ حالياً كـ metadata حتى تثبت نهائياً."
+          title="منطق التأثير (Fun Rules)"
+          body="اختر قاعدة التأثير الخاصة بهذا السؤال ليتم تجميدها وأخذ لقطة (Snapshot) منها فور الحفظ."
         >
           <div className="is-wide">
             <AdminSegmentedChoice
               label="Effect logic"
               value={data.effectLogic}
-              options={[...effectLogics]}
-              onChange={(value) => update('effectLogic', value)}
+              options={
+                funRules.length > 0
+                  ? funRules.map((rule) => ({
+                      value: rule.code,
+                      label: rule.nameEn || rule.code.toUpperCase(),
+                      caption: rule.nameAr,
+                    }))
+                  : [...defaultEffectLogics]
+              }
+              onChange={(value) => {
+                const matchedRule = funRules.find((r) => r.code === value || r.id === value)
+                setData((current) => ({
+                  ...current,
+                  effectLogic: (matchedRule
+                    ? matchedRule.code
+                    : value) as QuestionFormData['effectLogic'],
+                  funRuleId: matchedRule ? matchedRule.id : null,
+                }))
+              }}
             />
           </div>
+          {(data.effectLogic === 'steal' || data.effectLogic === 'transfer') && (
+            <AdminField
+              wide
+              label={
+                data.effectLogic === 'steal'
+                  ? 'عدد النقاط المخصومة من الفرق الأخرى'
+                  : 'عدد النقاط المحوّلة للفرق الأخرى'
+              }
+              error={errors.effectPoints}
+              help={
+                data.effectLogic === 'steal'
+                  ? 'عند الإجابة الصحيحة، يتم خصم هذا العدد من نقاط كل فريق آخر.'
+                  : 'عند الإجابة الصحيحة، يتم توزيع هذا العدد من النقاط على الفرق الأخرى.'
+              }
+            >
+              <div className="w-48">
+                <Input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={data.effectPoints ?? ''}
+                  onChange={(e) =>
+                    update('effectPoints', e.target.value ? Number(e.target.value) : null)
+                  }
+                  placeholder="مثال: 3"
+                />
+              </div>
+            </AdminField>
+          )}
           <AdminField label="نوع السجل" error={errors.type}>
             <SelectField
               value={data.type}

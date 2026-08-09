@@ -3,7 +3,8 @@ import { AdminLayout } from '~/components/admin/admin_layout'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { SelectField } from '@/components/ui/select_field'
-import { Textarea } from '@/components/ui/textarea'
+import { QuillEditor } from '~/components/ui/quill_editor'
+import { NumberChips } from '~/components/ui/number_chips'
 import { router, usePage } from '@inertiajs/react'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 import type { RequestPayload } from '@inertiajs/core'
@@ -65,9 +66,7 @@ const AdminGameForm: React.FC<GameFormProps> = ({ mode, game }) => {
   }
 
   return (
-    <AdminLayout
-      title={mode === 'edit' ? 'تعديل لعبة' : 'إضافة لعبة'}
-    >
+    <AdminLayout title={mode === 'edit' ? 'تعديل لعبة' : 'إضافة لعبة'}>
       <form className="admin-editor-form" onSubmit={submit}>
         <AdminFormPanel
           title="المحتوى العربي"
@@ -92,15 +91,12 @@ const AdminGameForm: React.FC<GameFormProps> = ({ mode, game }) => {
             />
           </AdminField>
           <AdminField label="الوصف" wide error={errors.description}>
-            <Textarea
-              value={data.description}
-              onChange={(event) => update('description', event.target.value)}
-            />
+            <QuillEditor value={data.description} onChange={(val) => update('description', val)} />
           </AdminField>
           <AdminField label="تعليمات اللعبة" wide error={errors.instructions}>
-            <Textarea
+            <QuillEditor
               value={data.instructions}
-              onChange={(event) => update('instructions', event.target.value)}
+              onChange={(val) => update('instructions', val)}
             />
           </AdminField>
         </AdminFormPanel>
@@ -149,23 +145,23 @@ const AdminGameForm: React.FC<GameFormProps> = ({ mode, game }) => {
           <AdminField
             label="خيارات عدد الجولات المتاحة"
             error={errors.allowedRoundCounts}
-            help="أعداد الجولات التي يمكن للمستخدم الاختيار منها. افصل القيم بفواصل: 5,10,15"
+            help="أعداد الجولات التي يمكن للمستخدم الاختيار منها. اكتب رقماً ثم اضغط (+) أو Enter للإضافة."
           >
-            <Input
-              value={data.allowedRoundCounts.join(',')}
-              onChange={(event) => update('allowedRoundCounts', toNumberList(event.target.value))}
+            <NumberChips
+              values={data.allowedRoundCounts}
+              onChange={(vals) => update('allowedRoundCounts', vals)}
+              placeholder="مثال: 5"
             />
           </AdminField>
           <AdminField
             label="خيارات مدة عرض السؤال (بالثواني)"
             error={errors.allowedQuestionDurations}
-            help="المدد التي يمكن للمستخدم الاختيار منها. افصل القيم بفواصل: 30,40,60"
+            help="المدد التي يمكن للمستخدم الاختيار منها (بالثواني). اكتب رقماً ثم اضغط (+) أو Enter للإضافة."
           >
-            <Input
-              value={data.allowedQuestionDurations.join(',')}
-              onChange={(event) =>
-                update('allowedQuestionDurations', toNumberList(event.target.value))
-              }
+            <NumberChips
+              values={data.allowedQuestionDurations}
+              onChange={(vals) => update('allowedQuestionDurations', vals)}
+              placeholder="مثال: 30"
             />
           </AdminField>
           <Checkbox
@@ -184,13 +180,6 @@ const AdminGameForm: React.FC<GameFormProps> = ({ mode, game }) => {
       </form>
     </AdminLayout>
   )
-}
-
-function toNumberList(value: string) {
-  return value
-    .split(',')
-    .map((item) => Number(item.trim()))
-    .filter((item) => Number.isFinite(item) && item > 0)
 }
 
 export default AdminGameForm

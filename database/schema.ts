@@ -99,6 +99,35 @@ export class CreditTransactionSchema extends BaseModel {
   declare userId: string
 }
 
+export class FunRuleSchema extends BaseModel {
+  static $columns = ['code', 'config', 'createdAt', 'descriptionAr', 'descriptionEn', 'effectType', 'id', 'isActive', 'nameAr', 'nameEn', 'sortOrder', 'updatedAt'] as const
+  $columns = FunRuleSchema.$columns
+  @column()
+  declare code: string
+  @column()
+  declare config: any
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare descriptionAr: string | null
+  @column()
+  declare descriptionEn: string | null
+  @column()
+  declare effectType: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isActive: boolean
+  @column()
+  declare nameAr: string
+  @column()
+  declare nameEn: string | null
+  @column()
+  declare sortOrder: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class GameSessionRoundAnswerSchema extends BaseModel {
   static $columns = ['createdAt', 'gameSessionRoundId', 'id', 'isCorrect', 'metadata', 'pointsAwarded', 'scoringRule', 'submittedAnswer', 'teamId', 'updatedAt'] as const
   $columns = GameSessionRoundAnswerSchema.$columns
@@ -358,7 +387,7 @@ export class PaymentSchema extends BaseModel {
 }
 
 export class QuestionCategorySchema extends BaseModel {
-  static $columns = ['createdAt', 'gameId', 'id', 'isEnabled', 'priceAmount', 'priceCurrency', 'publishedAt', 'slug', 'sortOrder', 'status', 'updatedAt'] as const
+  static $columns = ['createdAt', 'gameId', 'id', 'priceAmount', 'priceCurrency', 'publishedAt', 'slug', 'sortOrder', 'status', 'updatedAt'] as const
   $columns = QuestionCategorySchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -366,8 +395,6 @@ export class QuestionCategorySchema extends BaseModel {
   declare gameId: string
   @column({ isPrimary: true })
   declare id: string
-  @column()
-  declare isEnabled: boolean
   @column()
   declare priceAmount: string | null
   @column()
@@ -477,6 +504,64 @@ export class SessionSchema extends BaseModel {
   declare id: string
   @column()
   declare userId: string | null
+}
+
+export class SubscriptionPlanTranslationSchema extends BaseModel {
+  static $columns = ['createdAt', 'description', 'id', 'locale', 'metadata', 'subscriptionPlanId', 'title', 'updatedAt'] as const
+  $columns = SubscriptionPlanTranslationSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare description: string | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare locale: string
+  @column()
+  declare metadata: any
+  @column()
+  declare subscriptionPlanId: string
+  @column()
+  declare title: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class SubscriptionPlanSchema extends BaseModel {
+  static $columns = ['advantages', 'badgeLabel', 'createdAt', 'ctaLabel', 'id', 'isFeatured', 'maxTeams', 'note', 'priceAmount', 'priceCurrency', 'publishedAt', 'roundsGranted', 'slug', 'sortOrder', 'status', 'updatedAt'] as const
+  $columns = SubscriptionPlanSchema.$columns
+  @column()
+  declare advantages: string | null
+  @column()
+  declare badgeLabel: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare ctaLabel: string | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isFeatured: boolean
+  @column()
+  declare maxTeams: number
+  @column()
+  declare note: string | null
+  @column()
+  declare priceAmount: string
+  @column()
+  declare priceCurrency: string
+  @column.dateTime()
+  declare publishedAt: DateTime | null
+  @column()
+  declare roundsGranted: number
+  @column()
+  declare slug: string
+  @column()
+  declare sortOrder: number
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
 }
 
 export class UserVerificationCodeSchema extends BaseModel {

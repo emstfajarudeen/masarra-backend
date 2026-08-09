@@ -18,6 +18,7 @@ const navItems = [
   { href: '/admin/users', label: 'المستخدمون', eyebrow: 'Users' },
   { href: '/admin/games', label: 'الألعاب', eyebrow: 'Games' },
   { href: '/admin/categories', label: 'الأقسام', eyebrow: 'Packs' },
+  { href: '/admin/subscriptions', label: 'الاشتراكات', eyebrow: 'Subscriptions' },
   { href: '/admin/questions', label: 'الأسئلة', eyebrow: 'Questions' },
   { href: '/admin/media-assets', label: 'الوسائط', eyebrow: 'Media' },
   { href: '/admin/content-pages', label: 'الصفحات', eyebrow: 'Pages' },
@@ -73,10 +74,7 @@ function ProfileMenu() {
           <UserIcon />
           <span>Profile</span>
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onSelect={logout}
-          className="text-destructive focus:text-destructive"
-        >
+        <DropdownMenuItem onSelect={logout} className="text-destructive focus:text-destructive">
           <LogOut />
           <span>Logout</span>
         </DropdownMenuItem>

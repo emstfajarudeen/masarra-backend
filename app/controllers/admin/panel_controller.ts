@@ -12,6 +12,8 @@ import Question from '#models/question'
 import QuestionCategory from '#models/question_category'
 import QuestionCategoryTranslation from '#models/question_category_translation'
 import QuestionTranslation from '#models/question_translation'
+import SubscriptionPlan from '#models/subscription_plan'
+import SubscriptionPlanTranslation from '#models/subscription_plan_translation'
 import User from '#models/user'
 import {
   adminPanelCategoryFormValidator,
@@ -20,6 +22,8 @@ import {
   adminPanelContentPublishStatusValidator,
   adminPanelCategoryListFilterValidator,
   adminPanelContactMessageListFilterValidator,
+  adminPanelSubscriptionFormValidator,
+  adminPanelSubscriptionListFilterValidator,
   adminPanelContentPageListFilterValidator,
   adminPanelGameFormValidator,
   adminPanelGameListFilterValidator,
@@ -33,7 +37,13 @@ import {
   adminPanelUserStatusValidator,
 } from '#validators/admin_panel_forms'
 import { adminReportRangeValidator } from '#validators/admin_reports'
+import FunRule from '#models/fun_rule'
+import {
+  adminFunRuleFormValidator,
+  adminFunRuleListFilterValidator,
+} from '#validators/admin_fun_rules'
 import { serializeMediaAsset } from '#transformers/media_asset_transformer'
+import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 import { Exception } from '@adonisjs/core/exceptions'
 import type { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
@@ -686,6 +696,11 @@ export default class AdminPanelController {
           typeof question.metadata.mediaUrl === 'string' ? question.metadata.mediaUrl : null,
         basePoints: question.basePoints,
         sortOrder: question.sortOrder,
+        visibilityTimerEnabled: Boolean(question.metadata.visibilityTimerEnabled),
+        visibilityTimerSeconds:
+          typeof question.metadata.visibilityTimerSeconds === 'number'
+            ? question.metadata.visibilityTimerSeconds
+            : null,
         createdAt: question.createdAt?.toISO() ?? null,
         updatedAt: question.updatedAt?.toISO() ?? null,
         publishedAt: question.publishedAt?.toISO() ?? null,
@@ -974,6 +989,172 @@ export default class AdminPanelController {
     return response.redirect('/admin/categories')
   }
 
+  async subscriptions({ request, inertia }: HttpContext) {
+    const filters = await request.validateUsing(adminPanelSubscriptionListFilterValidator)
+    const status = filters.status ?? 'all'
+
+    const query = SubscriptionPlan.query()
+      .preload('translations', (translationQuery) => translationQuery.where('locale', 'ar'))
+      .orderBy('sort_order', 'asc')
+      .orderBy('created_at', 'desc')
+
+    if (status !== 'all') {
+      query.where('status', status)
+    }
+
+    const [plans, total, published, featured] = await Promise.all([
+      query.limit(80),
+      SubscriptionPlan.query().count('* as total').first(),
+      SubscriptionPlan.query().where('status', 'published').count('* as total').first(),
+      SubscriptionPlan.query().where('is_featured', true).count('* as total').first(),
+    ])
+
+    return inertia.render('admin/subscriptions', {
+      plans: plans.map((plan) => ({
+        id: plan.id,
+        slug: plan.slug,
+        title: plan.translations[0]?.title ?? plan.slug,
+        status: plan.status,
+        priceAmount: plan.priceAmount,
+        priceCurrency: plan.priceCurrency,
+        roundsGranted: plan.roundsGranted,
+        maxTeams: plan.maxTeams,
+        isFeatured: plan.isFeatured,
+        badgeLabel: plan.badgeLabel ?? '',
+        ctaLabel: plan.ctaLabel ?? '',
+        note: plan.note ?? '',
+        advantages: plan.advantages ?? '',
+        createdAt: plan.createdAt?.toISO() ?? null,
+      })),
+      filters: { status },
+      stats: {
+        total: this.countValue(total),
+        published: this.countValue(published),
+        featured: this.countValue(featured),
+      },
+    })
+  }
+
+  async subscriptionShow({ request, inertia }: HttpContext) {
+    const {
+      params: { id },
+    } = await request.validateUsing(adminPanelIdParamsValidator)
+    const plan = await this.findSubscription(id)
+
+    return inertia.render('admin/subscription_show', {
+      plan: {
+        ...this.serializeSubscriptionForm(plan),
+        publishedAt: plan.publishedAt?.toISO() ?? null,
+        createdAt: plan.createdAt?.toISO() ?? null,
+        updatedAt: plan.updatedAt?.toISO() ?? null,
+      },
+    })
+  }
+
+  async subscriptionCreate({ inertia }: HttpContext) {
+    return inertia.render('admin/subscription_form', {
+      mode: 'create',
+      plan: null,
+    })
+  }
+
+  async subscriptionEdit({ request, inertia }: HttpContext) {
+    const {
+      params: { id },
+    } = await request.validateUsing(adminPanelIdParamsValidator)
+    const plan = await this.findSubscription(id)
+
+    return inertia.render('admin/subscription_form', {
+      mode: 'edit',
+      plan: this.serializeSubscriptionForm(plan),
+    })
+  }
+
+  async subscriptionStore({ request, response, session }: HttpContext) {
+    const payload = await request.validateUsing(adminPanelSubscriptionFormValidator)
+
+    await db.transaction(async (trx) => {
+      await this.assertSubscriptionSlug(payload.slug, undefined, trx)
+      const plan = new SubscriptionPlan()
+      plan.useTransaction(trx)
+      plan.fill({
+        slug: payload.slug,
+        status: payload.status,
+        priceAmount: payload.priceAmount,
+        priceCurrency: 'KWD',
+        roundsGranted: payload.roundsGranted,
+        maxTeams: payload.maxTeams,
+        isFeatured: payload.isFeatured,
+        badgeLabel: payload.badgeLabel ?? null,
+        ctaLabel: payload.ctaLabel ?? null,
+        note: payload.note ?? null,
+        advantages: payload.advantages ?? null,
+        sortOrder: payload.sortOrder ?? 0,
+        publishedAt: this.publishedAtFor(payload.status),
+      })
+      await plan.save()
+      await this.syncSubscriptionArabicTranslation(plan.id, payload, trx)
+    })
+
+    session.flash('success', 'Subscription plan created.')
+    return response.redirect('/admin/subscriptions')
+  }
+
+  async subscriptionUpdate({ request, response, session }: HttpContext) {
+    const payload = await request.validateUsing(adminPanelSubscriptionFormValidator)
+    const id = payload.params?.id
+    if (!id) throw new Exception('Subscription plan id is required.', { status: 400 })
+
+    await db.transaction(async (trx) => {
+      await this.assertSubscriptionSlug(payload.slug, id, trx)
+      const plan = await SubscriptionPlan.query({ client: trx }).where('id', id).firstOrFail()
+      plan.useTransaction(trx)
+      plan.merge({
+        slug: payload.slug,
+        status: payload.status,
+        priceAmount: payload.priceAmount,
+        priceCurrency: 'KWD',
+        roundsGranted: payload.roundsGranted,
+        maxTeams: payload.maxTeams,
+        isFeatured: payload.isFeatured,
+        badgeLabel: payload.badgeLabel ?? null,
+        ctaLabel: payload.ctaLabel ?? null,
+        note: payload.note ?? null,
+        advantages: payload.advantages ?? null,
+        sortOrder: payload.sortOrder ?? 0,
+        publishedAt: this.publishedAtFor(payload.status, plan.publishedAt),
+      })
+      await plan.save()
+      await this.syncSubscriptionArabicTranslation(plan.id, payload, trx)
+    })
+
+    session.flash('success', 'Subscription plan updated.')
+    return response.redirect('/admin/subscriptions')
+  }
+
+  async subscriptionUpdateStatus({ request, response, session }: HttpContext) {
+    const payload = await request.validateUsing(adminPanelPublishStatusValidator)
+    const plan = await SubscriptionPlan.findOrFail(payload.params.id)
+
+    plan.status = payload.status
+    plan.publishedAt = this.publishedAtFor(payload.status, plan.publishedAt)
+    await plan.save()
+
+    session.flash('success', 'Subscription plan status updated.')
+    return response.redirect(`/admin/subscriptions/${plan.id}`)
+  }
+
+  async subscriptionDestroy({ request, response, session }: HttpContext) {
+    const {
+      params: { id },
+    } = await request.validateUsing(adminPanelIdParamsValidator)
+    const plan = await SubscriptionPlan.findOrFail(id)
+    await plan.delete()
+
+    session.flash('success', 'Subscription plan deleted.')
+    return response.redirect('/admin/subscriptions')
+  }
+
   async questions({ request, inertia }: HttpContext) {
     const filters = await request.validateUsing(adminPanelQuestionListFilterValidator)
     const status = filters.status ?? 'all'
@@ -993,6 +1174,7 @@ export default class AdminPanelController {
         )
       })
       .preload('translations', (translationQuery) => translationQuery.where('locale', 'ar'))
+      .orderBy('sort_order', 'asc')
       .orderBy('created_at', 'desc')
 
     if (filters.gameId) {
@@ -1072,6 +1254,172 @@ export default class AdminPanelController {
     })
   }
 
+  async funRules({ request, inertia }: HttpContext) {
+    const filters = await request.validateUsing(adminFunRuleListFilterValidator)
+    const search = filters.search ?? ''
+    const isActive = filters.isActive ?? 'all'
+
+    const query = FunRule.query().orderBy('sort_order', 'asc').orderBy('created_at', 'desc')
+
+    if (search) {
+      query.where((q) => {
+        q.where('name_ar', 'ILIKE', `%${search}%`)
+          .orWhere('name_en', 'ILIKE', `%${search}%`)
+          .orWhere('code', 'ILIKE', `%${search}%`)
+      })
+    }
+
+    if (isActive !== 'all') {
+      query.where('is_active', isActive === 'active')
+    }
+
+    const rules = await query
+
+    const [totalCount, activeCount] = await Promise.all([
+      FunRule.query().count('* as total').first(),
+      FunRule.query().where('is_active', true).count('* as total').first(),
+    ])
+
+    const total = this.countValue(totalCount)
+    const active = this.countValue(activeCount)
+
+    return inertia.render('admin/fun_rules', {
+      rules: rules.map((rule) => ({
+        id: rule.id,
+        code: rule.code,
+        nameAr: rule.nameAr,
+        nameEn: rule.nameEn,
+        descriptionAr: rule.descriptionAr,
+        descriptionEn: rule.descriptionEn,
+        effectType: rule.effectType,
+        config: rule.config as Record<string, JSONDataTypes>,
+        isActive: rule.isActive,
+        sortOrder: rule.sortOrder,
+        createdAt: rule.createdAt?.toISO() ?? null,
+      })),
+      filters: { search, isActive },
+      stats: { total, active, inactive: total - active },
+    })
+  }
+
+  async funRuleCreate({ inertia }: HttpContext) {
+    return inertia.render('admin/fun_rule_form', {
+      mode: 'create',
+      rule: null,
+    })
+  }
+
+  async funRuleStore({ request, response, session }: HttpContext) {
+    const payload = await request.validateUsing(adminFunRuleFormValidator)
+
+    const existingCode = await FunRule.query().where('code', payload.code).first()
+    if (existingCode) {
+      throw new Exception('A fun rule with this code already exists.', { status: 422 })
+    }
+
+    let config = {}
+    if (payload.configJson) {
+      try {
+        config = JSON.parse(payload.configJson)
+      } catch {
+        throw new Exception('Invalid JSON string for config.', { status: 422 })
+      }
+    }
+
+    const rule = new FunRule()
+    rule.fill({
+      code: payload.code,
+      nameAr: payload.nameAr,
+      nameEn: payload.nameEn ?? null,
+      descriptionAr: payload.descriptionAr ?? null,
+      descriptionEn: payload.descriptionEn ?? null,
+      effectType: payload.effectType,
+      config,
+      isActive: payload.isActive ?? true,
+      sortOrder: payload.sortOrder ?? 0,
+    })
+    await rule.save()
+
+    session.flash('success', 'Fun Rule created.')
+    return response.redirect('/admin/fun-rules')
+  }
+
+  async funRuleEdit({ request, inertia }: HttpContext) {
+    const {
+      params: { id },
+    } = await request.validateUsing(adminPanelIdParamsValidator)
+    const rule = await FunRule.findOrFail(id)
+
+    return inertia.render('admin/fun_rule_form', {
+      mode: 'edit',
+      rule: {
+        id: rule.id,
+        code: rule.code,
+        nameAr: rule.nameAr,
+        nameEn: rule.nameEn,
+        descriptionAr: rule.descriptionAr,
+        descriptionEn: rule.descriptionEn,
+        effectType: rule.effectType,
+        configJson: JSON.stringify(rule.config, null, 2),
+        isActive: rule.isActive,
+        sortOrder: rule.sortOrder,
+      },
+    })
+  }
+
+  async funRuleUpdate({ request, response, session }: HttpContext) {
+    const payload = await request.validateUsing(adminFunRuleFormValidator)
+    const id = payload.params?.id
+    if (!id) throw new Exception('Rule id is required.', { status: 400 })
+
+    const rule = await FunRule.findOrFail(id)
+
+    const existingCode = await FunRule.query()
+      .where('code', payload.code)
+      .whereNot('id', id)
+      .first()
+    if (existingCode) {
+      throw new Exception('Another fun rule with this code already exists.', { status: 422 })
+    }
+
+    let config = rule.config
+    if (payload.configJson !== undefined) {
+      try {
+        config = payload.configJson ? JSON.parse(payload.configJson) : {}
+      } catch {
+        throw new Exception('Invalid JSON string for config.', { status: 422 })
+      }
+    }
+
+    rule.merge({
+      code: payload.code,
+      nameAr: payload.nameAr,
+      nameEn: payload.nameEn ?? null,
+      descriptionAr: payload.descriptionAr ?? null,
+      descriptionEn: payload.descriptionEn ?? null,
+      effectType: payload.effectType,
+      config,
+      isActive: payload.isActive ?? rule.isActive,
+      sortOrder: payload.sortOrder ?? rule.sortOrder,
+    })
+    await rule.save()
+
+    session.flash('success', 'Fun Rule updated.')
+    return response.redirect('/admin/fun-rules')
+  }
+
+  async funRuleUpdateStatus({ request, response, session }: HttpContext) {
+    const {
+      params: { id },
+    } = await request.validateUsing(adminPanelIdParamsValidator)
+    const rule = await FunRule.findOrFail(id)
+    rule.isActive = !rule.isActive
+    await rule.save()
+
+    session.flash('success', 'Fun Rule status updated.')
+    return response.redirect('/admin/fun-rules')
+  }
+
   async questionCreate({ inertia }: HttpContext) {
     return inertia.render('admin/question_form', {
       mode: 'create',
@@ -1079,6 +1427,7 @@ export default class AdminPanelController {
       games: await this.gameOptions(),
       categories: await this.categoryOptions(),
       mediaAssets: await this.mediaAssetOptions(),
+      funRules: await this.funRuleOptions(),
     })
   }
 
@@ -1094,6 +1443,7 @@ export default class AdminPanelController {
       games: await this.gameOptions(),
       categories: await this.categoryOptions(),
       mediaAssets: await this.mediaAssetOptions(),
+      funRules: await this.funRuleOptions(),
     })
   }
 
@@ -1146,6 +1496,10 @@ export default class AdminPanelController {
 
   async questionStore({ request, response, session }: HttpContext) {
     const payload = await request.validateUsing(adminPanelQuestionFormValidator)
+    const { funRuleId, resolvedEffectLogic, funRuleSnapshot } = await this.resolveFunRuleSnapshot(
+      payload.funRuleId,
+      payload.effectLogic
+    )
 
     await db.transaction(async (trx) => {
       await this.assertGameExists(payload.gameId, trx)
@@ -1163,11 +1517,19 @@ export default class AdminPanelController {
         status: payload.status,
         type: payload.type,
         basePoints: payload.basePoints,
+        sortOrder: payload.sortOrder ?? 0,
         metadata: {
           contentMode: payload.contentMode,
-          effectLogic: payload.effectLogic,
+          effectLogic: resolvedEffectLogic,
+          effectPoints: payload.effectPoints ?? null,
+          funRuleId,
+          funRule: funRuleSnapshot,
           mediaAssetId: payload.mediaAssetId ?? null,
           mediaUrl: payload.mediaUrl ?? null,
+          visibilityTimerEnabled: payload.visibilityTimerEnabled ?? false,
+          visibilityTimerSeconds: payload.visibilityTimerEnabled
+            ? (payload.visibilityTimerSeconds ?? null)
+            : null,
         },
         publishedAt: this.publishedAtFor(payload.status),
       })
@@ -1183,6 +1545,11 @@ export default class AdminPanelController {
     const payload = await request.validateUsing(adminPanelQuestionFormValidator)
     const id = payload.params?.id
     if (!id) throw new Exception('Question id is required.', { status: 400 })
+
+    const { funRuleId, resolvedEffectLogic, funRuleSnapshot } = await this.resolveFunRuleSnapshot(
+      payload.funRuleId,
+      payload.effectLogic
+    )
 
     await db.transaction(async (trx) => {
       await this.assertGameExists(payload.gameId, trx)
@@ -1200,11 +1567,19 @@ export default class AdminPanelController {
         status: payload.status,
         type: payload.type,
         basePoints: payload.basePoints,
+        sortOrder: payload.sortOrder ?? 0,
         metadata: {
           contentMode: payload.contentMode,
-          effectLogic: payload.effectLogic,
+          effectLogic: resolvedEffectLogic,
+          effectPoints: payload.effectPoints ?? null,
+          funRuleId,
+          funRule: funRuleSnapshot ?? (question.metadata.funRule as Record<string, unknown> | null),
           mediaAssetId: payload.mediaAssetId ?? null,
           mediaUrl: payload.mediaUrl ?? null,
+          visibilityTimerEnabled: payload.visibilityTimerEnabled ?? false,
+          visibilityTimerSeconds: payload.visibilityTimerEnabled
+            ? (payload.visibilityTimerSeconds ?? null)
+            : null,
         },
         publishedAt: this.publishedAtFor(payload.status, question.publishedAt),
       })
@@ -1601,6 +1976,10 @@ export default class AdminPanelController {
     return ContentPage.query().where('id', id).preload('translations').firstOrFail()
   }
 
+  private async findSubscription(id: string) {
+    return SubscriptionPlan.query().where('id', id).preload('translations').firstOrFail()
+  }
+
   private serializeGameForm(game: Game) {
     const translation = game.translations.find((item) => item.locale === 'ar')
     return {
@@ -1643,6 +2022,13 @@ export default class AdminPanelController {
       type: question.type,
       contentMode: String(question.metadata.contentMode ?? 'text'),
       effectLogic: String(question.metadata.effectLogic ?? 'normal'),
+      effectPoints:
+        typeof question.metadata.effectPoints === 'number'
+          ? question.metadata.effectPoints
+          : null,
+      funRuleId:
+        typeof question.metadata.funRuleId === 'string' ? question.metadata.funRuleId : null,
+      funRule: (question.metadata.funRule as Record<string, JSONDataTypes> | null) ?? null,
       mediaAssetId:
         typeof question.metadata.mediaAssetId === 'string' ? question.metadata.mediaAssetId : null,
       mediaUrl: typeof question.metadata.mediaUrl === 'string' ? question.metadata.mediaUrl : '',
@@ -1650,6 +2036,12 @@ export default class AdminPanelController {
       correctAnswer: translation?.correctAnswer ?? '',
       explanation: translation?.explanation ?? '',
       basePoints: question.basePoints,
+      sortOrder: question.sortOrder,
+      visibilityTimerEnabled: Boolean(question.metadata.visibilityTimerEnabled),
+      visibilityTimerSeconds:
+        typeof question.metadata.visibilityTimerSeconds === 'number'
+          ? question.metadata.visibilityTimerSeconds
+          : null,
     }
   }
 
@@ -1662,6 +2054,25 @@ export default class AdminPanelController {
       title: translation?.title ?? '',
       excerpt: translation?.excerpt ?? '',
       body: translation?.body ?? '',
+    }
+  }
+
+  private serializeSubscriptionForm(plan: SubscriptionPlan) {
+    const translation = plan.translations.find((item) => item.locale === 'ar')
+    return {
+      id: plan.id,
+      slug: plan.slug,
+      status: plan.status,
+      title: translation?.title ?? '',
+      priceAmount: plan.priceAmount,
+      priceCurrency: plan.priceCurrency,
+      roundsGranted: plan.roundsGranted,
+      maxTeams: plan.maxTeams,
+      isFeatured: plan.isFeatured,
+      badgeLabel: plan.badgeLabel ?? '',
+      ctaLabel: plan.ctaLabel ?? '',
+      note: plan.note ?? '',
+      advantages: plan.advantages ?? null,
     }
   }
 
@@ -1863,5 +2274,90 @@ export default class AdminPanelController {
     if (ignoreId) query.whereNot('id', ignoreId)
     if (await query.first())
       throw new Exception('Content page slug is already used.', { status: 409 })
+  }
+
+  private async assertSubscriptionSlug(
+    slug: string,
+    ignoreId: string | undefined,
+    trx: TransactionClientContract
+  ) {
+    const query = SubscriptionPlan.query({ client: trx }).where('slug', slug)
+    if (ignoreId) query.whereNot('id', ignoreId)
+    if (await query.first())
+      throw new Exception('Subscription plan slug is already used.', { status: 409 })
+  }
+
+  private async syncSubscriptionArabicTranslation(
+    subscriptionPlanId: string,
+    payload: { title: string; description?: string | null },
+    trx: TransactionClientContract
+  ) {
+    const translation =
+      (await SubscriptionPlanTranslation.query({ client: trx })
+        .where('subscription_plan_id', subscriptionPlanId)
+        .where('locale', 'ar')
+        .first()) ?? new SubscriptionPlanTranslation()
+    translation.useTransaction(trx)
+    translation.merge({
+      subscriptionPlanId,
+      locale: 'ar',
+      title: payload.title,
+      description: payload.description ?? null,
+      metadata: {},
+    })
+    await translation.save()
+  }
+
+  private async funRuleOptions() {
+    const rules = await FunRule.query()
+      .where('is_active', true)
+      .orderBy('sort_order', 'asc')
+      .orderBy('code', 'asc')
+    return rules.map((rule) => ({
+      id: rule.id,
+      code: rule.code,
+      nameAr: rule.nameAr,
+      nameEn: rule.nameEn,
+      descriptionAr: rule.descriptionAr,
+      descriptionEn: rule.descriptionEn,
+      effectType: rule.effectType,
+      config: rule.config as Record<string, JSONDataTypes>,
+    }))
+  }
+
+  private async resolveFunRuleSnapshot(
+    funRuleIdOrCode?: string | null,
+    fallbackEffectLogic?: string | null
+  ) {
+    let resolvedEffectLogic = fallbackEffectLogic || 'normal'
+    let funRuleSnapshot: Record<string, unknown> | null = null
+    let funRuleId: string | null = null
+
+    const query = FunRule.query()
+    if (funRuleIdOrCode) {
+      query.where('id', funRuleIdOrCode).orWhere('code', funRuleIdOrCode)
+    } else if (fallbackEffectLogic) {
+      query.where('code', fallbackEffectLogic)
+    }
+
+    const funRule = await query.first()
+
+    if (funRule) {
+      funRuleId = funRule.id
+      resolvedEffectLogic = funRule.effectType
+      funRuleSnapshot = {
+        id: funRule.id,
+        code: funRule.code,
+        nameAr: funRule.nameAr,
+        nameEn: funRule.nameEn,
+        descriptionAr: funRule.descriptionAr,
+        descriptionEn: funRule.descriptionEn,
+        effectType: funRule.effectType,
+        config: funRule.config,
+        snapshottedAt: new Date().toISOString(),
+      }
+    }
+
+    return { funRuleId, resolvedEffectLogic, funRuleSnapshot }
   }
 }

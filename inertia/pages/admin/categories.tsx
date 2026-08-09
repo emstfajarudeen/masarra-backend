@@ -14,10 +14,11 @@ import {
 } from '@/components/ui/table'
 import { EditIconLink, ViewIconLink } from '~/components/admin/table_actions'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 import { SelectField } from '@/components/ui/select_field'
 import type { JSONDataTypes } from '@adonisjs/core/types/transformers'
 import React, { useState } from 'react'
+import { SlidersHorizontal, ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface CategoryRow extends Record<string, JSONDataTypes> {
   id: string
@@ -56,60 +57,118 @@ export interface AdminCategoriesProps extends Record<string, JSONDataTypes> {
 
 const statusOptions = ['all', 'draft', 'published', 'archived'] as const
 
+const statusLabels: Record<string, string> = {
+  all: 'كل الحالات',
+  draft: 'مسودة',
+  published: 'منشور',
+  archived: 'مؤرشف',
+}
+
 const AdminCategories: React.FC<AdminCategoriesProps> = ({ categories, filters, stats, games }) => {
   const [gameId, setGameId] = useState(filters.gameId || 'all')
+
+  const hasActiveFilters =
+    (filters.gameId && filters.gameId !== 'all') || (filters.status && filters.status !== 'all')
+
+  const [isFilterExpanded, setIsFilterExpanded] = useState(!!hasActiveFilters)
 
   return (
     <AdminLayout title="الأقسام">
       <section className="admin-config-hero">
         <article>
-          <span>Total categories</span>
+          <span>إجمالي الأقسام</span>
           <strong>{stats.total}</strong>
           <p>كل الأقسام</p>
         </article>
         <article>
-          <span>Published</span>
+          <span>المنشورة</span>
           <strong>{stats.published}</strong>
           <p>قابلة للظهور</p>
         </article>
         <article>
-          <span>Paid packs</span>
+          <span>الباقات المدفوعة</span>
           <strong>{stats.paid}</strong>
           <p>لها سعر</p>
         </article>
       </section>
 
-      <section className="admin-panel">
-        <form className="admin-list-filters" method="get" action="/admin/categories">
-          <div className="space-y-1">
-            <Label>Game</Label>
-            <input type="hidden" name="gameId" value={gameId === 'all' ? '' : gameId} />
-            <SelectField
-              value={gameId}
-              onValueChange={setGameId}
-              options={[
-                { value: 'all', label: 'All games' },
-                ...games.map((game) => ({ value: game.id, label: game.title })),
-              ]}
+      <section className="admin-panel bg-white border border-[var(--masarra-border-soft)]">
+        <div className="p-6">
+          <button
+            type="button"
+            onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+            className="w-full flex items-center justify-between cursor-pointer focus:outline-none"
+          >
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="h-5 w-5 text-[var(--masarra-purple)]" />
+              <h3 className="text-lg font-bold text-[var(--masarra-purple-deep)]">تصفية الأقسام</h3>
+            </div>
+            <ChevronDown
+              className={cn(
+                'h-5 w-5 text-[var(--masarra-purple-deep)] transition-transform duration-200',
+                isFilterExpanded && 'rotate-180'
+              )}
             />
-          </div>
+          </button>
 
-          <div className="space-y-1">
-            <Label>Status</Label>
-            <SelectField
-              name="status"
-              defaultValue={filters.status}
-              options={statusOptions.map((status) => ({ value: status, label: status }))}
-            />
-          </div>
+          {isFilterExpanded && (
+            <form
+              method="get"
+              action="/admin/categories"
+              className="space-y-6 pt-6 animate-in fade-in duration-200"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--masarra-muted)]">
+                    اللعبة
+                  </label>
+                  <input type="hidden" name="gameId" value={gameId === 'all' ? '' : gameId} />
+                  <SelectField
+                    value={gameId}
+                    onValueChange={setGameId}
+                    options={[
+                      { value: 'all', label: 'كل الألعاب' },
+                      ...games.map((game) => ({ value: game.id, label: game.title })),
+                    ]}
+                    className="w-full"
+                  />
+                </div>
 
-          <div>
-            <Button type="submit">Apply filters</Button>
-            <Button variant="ghost" asChild>
-              <a href="/admin/categories">Reset</a>
-            </Button>
-          </div>
-        </form>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[var(--masarra-muted)]">
+                    الحالة
+                  </label>
+                  <SelectField
+                    name="status"
+                    defaultValue={filters.status}
+                    options={statusOptions.map((status) => ({
+                      value: status,
+                      label: statusLabels[status],
+                    }))}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-[var(--masarra-border-soft)]">
+                <Button variant="ghost" asChild>
+                  <a
+                    href="/admin/categories"
+                    className="hover:bg-red-50 hover:text-red-500 transition-colors"
+                  >
+                    إعادة ضبط
+                  </a>
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-[var(--masarra-purple)] hover:bg-[var(--masarra-purple-bright)] text-white shadow-sm px-6"
+                >
+                  تطبيق التصفية
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
       </section>
 
       <section className="admin-panel">
@@ -117,7 +176,7 @@ const AdminCategories: React.FC<AdminCategoriesProps> = ({ categories, filters, 
           <div>
             <h2>الأقسام الاختيارية</h2>
           </div>
-          <AdminButtonLink href="/admin/categories/create">+ Add category</AdminButtonLink>
+          <AdminButtonLink href="/admin/categories/create">+ إضافة قسم</AdminButtonLink>
         </div>
 
         {categories.length === 0 ? (
@@ -130,12 +189,12 @@ const AdminCategories: React.FC<AdminCategoriesProps> = ({ categories, filters, 
             <TableHeader>
               <TableRow>
                 <TableHead className="w-px" />
-                <TableHead>Title</TableHead>
-                <TableHead>Game</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>القسم</TableHead>
+                <TableHead>اللعبة</TableHead>
+                <TableHead>المعرف الفريد (Slug)</TableHead>
+                <TableHead>السعر</TableHead>
+                <TableHead>الحالة</TableHead>
+                <TableHead>الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

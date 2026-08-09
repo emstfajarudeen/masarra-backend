@@ -29,6 +29,14 @@ export type ScannedRoutes = {
     'admin_panel.category_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.category_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.category_show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.subscriptions': { paramsTuple?: []; params?: {} }
+    'admin_panel.subscription_create': { paramsTuple?: []; params?: {} }
+    'admin_panel.subscription_store': { paramsTuple?: []; params?: {} }
+    'admin_panel.subscription_edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.subscription_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.subscription_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.subscription_destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.subscription_show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.questions': { paramsTuple?: []; params?: {} }
     'admin_panel.question_create': { paramsTuple?: []; params?: {} }
     'admin_panel.question_store': { paramsTuple?: []; params?: {} }
@@ -36,6 +44,12 @@ export type ScannedRoutes = {
     'admin_panel.question_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.question_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.question_show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.fun_rules': { paramsTuple?: []; params?: {} }
+    'admin_panel.fun_rule_create': { paramsTuple?: []; params?: {} }
+    'admin_panel.fun_rule_store': { paramsTuple?: []; params?: {} }
+    'admin_panel.fun_rule_edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.fun_rule_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.fun_rule_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.media_assets': { paramsTuple?: []; params?: {} }
     'admin_panel_media_assets.store': { paramsTuple?: []; params?: {} }
     'admin_panel.content_pages': { paramsTuple?: []; params?: {} }
@@ -129,10 +143,17 @@ export type ScannedRoutes = {
     'admin_panel.category_create': { paramsTuple?: []; params?: {} }
     'admin_panel.category_edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.category_show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.subscriptions': { paramsTuple?: []; params?: {} }
+    'admin_panel.subscription_create': { paramsTuple?: []; params?: {} }
+    'admin_panel.subscription_edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.subscription_show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.questions': { paramsTuple?: []; params?: {} }
     'admin_panel.question_create': { paramsTuple?: []; params?: {} }
     'admin_panel.question_edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.question_show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.fun_rules': { paramsTuple?: []; params?: {} }
+    'admin_panel.fun_rule_create': { paramsTuple?: []; params?: {} }
+    'admin_panel.fun_rule_edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.media_assets': { paramsTuple?: []; params?: {} }
     'admin_panel.content_pages': { paramsTuple?: []; params?: {} }
     'admin_panel.content_page_create': { paramsTuple?: []; params?: {} }
@@ -187,10 +208,17 @@ export type ScannedRoutes = {
     'admin_panel.category_create': { paramsTuple?: []; params?: {} }
     'admin_panel.category_edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.category_show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.subscriptions': { paramsTuple?: []; params?: {} }
+    'admin_panel.subscription_create': { paramsTuple?: []; params?: {} }
+    'admin_panel.subscription_edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.subscription_show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.questions': { paramsTuple?: []; params?: {} }
     'admin_panel.question_create': { paramsTuple?: []; params?: {} }
     'admin_panel.question_edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.question_show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.fun_rules': { paramsTuple?: []; params?: {} }
+    'admin_panel.fun_rule_create': { paramsTuple?: []; params?: {} }
+    'admin_panel.fun_rule_edit': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.media_assets': { paramsTuple?: []; params?: {} }
     'admin_panel.content_pages': { paramsTuple?: []; params?: {} }
     'admin_panel.content_page_create': { paramsTuple?: []; params?: {} }
@@ -233,7 +261,9 @@ export type ScannedRoutes = {
     'auth.web_logout': { paramsTuple?: []; params?: {} }
     'admin_panel.game_store': { paramsTuple?: []; params?: {} }
     'admin_panel.category_store': { paramsTuple?: []; params?: {} }
+    'admin_panel.subscription_store': { paramsTuple?: []; params?: {} }
     'admin_panel.question_store': { paramsTuple?: []; params?: {} }
+    'admin_panel.fun_rule_store': { paramsTuple?: []; params?: {} }
     'admin_panel_media_assets.store': { paramsTuple?: []; params?: {} }
     'admin_panel.content_page_store': { paramsTuple?: []; params?: {} }
     'auth.register': { paramsTuple?: []; params?: {} }
@@ -265,7 +295,9 @@ export type ScannedRoutes = {
     'admin_panel.profile_update_password': { paramsTuple?: []; params?: {} }
     'admin_panel.game_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.category_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.subscription_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.question_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.fun_rule_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.content_page_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.user_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.contact_message_update_status': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -278,12 +310,17 @@ export type ScannedRoutes = {
   PUT: {
     'admin_panel.game_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.category_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.subscription_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.question_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'admin_panel.fun_rule_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_panel.content_page_update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_games.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_question_categories.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_questions.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'admin_content_pages.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+  }
+  DELETE: {
+    'admin_panel.subscription_destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
 }
 declare module '@adonisjs/core/types/http' {

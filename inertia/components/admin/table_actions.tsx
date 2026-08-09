@@ -51,10 +51,7 @@ export function RowActionMenu({
       <DropdownMenuContent align="end">
         {children}
         {onDelete ? (
-          <DropdownMenuItem
-            onSelect={onDelete}
-            className="text-destructive focus:text-destructive"
-          >
+          <DropdownMenuItem onSelect={onDelete} className="text-destructive focus:text-destructive">
             <Trash2 />
             <span>Delete</span>
           </DropdownMenuItem>

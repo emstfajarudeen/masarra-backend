@@ -66,9 +66,7 @@ const AdminContentPageForm: React.FC<ContentPageFormProps> = ({ mode, page }) =>
   }
 
   return (
-    <AdminLayout
-      title={mode === 'edit' ? 'تعديل صفحة' : 'إضافة صفحة'}
-    >
+    <AdminLayout title={mode === 'edit' ? 'تعديل صفحة' : 'إضافة صفحة'}>
       <form className="admin-editor-form" onSubmit={submit}>
         {mode === 'edit' && data.id ? (
           <section className="admin-panel">

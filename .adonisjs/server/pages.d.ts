@@ -36,5 +36,10 @@ declare module '@adonisjs/inertia/types' {
     'errors/not_found': ExtractProps<(typeof import('../../inertia/pages/errors/not_found.tsx'))['default']>
     'errors/server_error': ExtractProps<(typeof import('../../inertia/pages/errors/server_error.tsx'))['default']>
     'home': ExtractProps<(typeof import('../../inertia/pages/home.tsx'))['default']>
+    'admin/subscriptions': ExtractProps<(typeof import('../../inertia/pages/admin/subscriptions.tsx'))['default']>
+    'admin/subscription_form': ExtractProps<(typeof import('../../inertia/pages/admin/subscription_form.tsx'))['default']>
+    'admin/subscription_show': ExtractProps<(typeof import('../../inertia/pages/admin/subscription_show.tsx'))['default']>
+    'admin/fun_rules': ExtractProps<(typeof import('../../inertia/pages/admin/fun_rules.tsx'))['default']>
+    'admin/fun_rule_form': ExtractProps<(typeof import('../../inertia/pages/admin/fun_rule_form.tsx'))['default']>
   }
 }
